@@ -45,8 +45,11 @@ def current_sid():
     import win32api
     import win32con
     import win32security as security
-    with security.OpenProcessToken(win32api.GetCurrentProcess(), win32con.TOKEN_QUERY) as token:
+    token = security.OpenProcessToken(win32api.GetCurrentProcess(), win32con.TOKEN_QUERY)
+    try:
         return security.GetTokenInformation(token, security.TokenUser)[0]
+    finally:
+        token.Close()
 
 
 def _fd_path(descriptor):
@@ -117,8 +120,11 @@ def private_chmod(target, mode: int) -> None:
         # default owner group. Only that token's own default owner is eligible.
         import win32api
         import win32con
-        with security.OpenProcessToken(win32api.GetCurrentProcess(), win32con.TOKEN_QUERY) as token:
+        token = security.OpenProcessToken(win32api.GetCurrentProcess(), win32con.TOKEN_QUERY)
+        try:
             default_owner = security.GetTokenInformation(token, security.TokenOwner)
+        finally:
+            token.Close()
         if existing_owner != default_owner:
             raise OSError("输出不属于当前用户；拒绝修改权限")
     dacl = security.ACL()

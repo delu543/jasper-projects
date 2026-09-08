@@ -63,6 +63,8 @@ class NativeWindows(unittest.TestCase):
 
     def test_read_process_memory_is_read_only(self):
         from live_tools.windows.key_capture import MemoryReader
+        from live_tools.windows.router import process_owned_by_current_user
+        self.assertTrue(process_owned_by_current_user(os.getpid()))
         data = ctypes.create_string_buffer(b"synthetic memory fixture")
         reader = MemoryReader(os.getpid())
         try:

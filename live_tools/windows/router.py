@@ -78,9 +78,15 @@ def process_owned_by_current_user(pid: int) -> bool:
     import win32api
     import win32con
     import win32security as security
-    with win32api.OpenProcess(0x1000, False, pid) as process:
-        with security.OpenProcessToken(process, win32con.TOKEN_QUERY) as token:
+    process = win32api.OpenProcess(0x1000, False, pid)
+    try:
+        token = security.OpenProcessToken(process, win32con.TOKEN_QUERY)
+        try:
             return security.GetTokenInformation(token, security.TokenUser)[0] == current_sid()
+        finally:
+            token.Close()
+    finally:
+        process.Close()
 
 
 def roots_from_open_files(paths):
