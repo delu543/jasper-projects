@@ -1,6 +1,6 @@
 # Privacy boundary
 
-WeChat Local Export is designed for authorized data already present on the user's Mac.
+WeChat Local Export is designed for authorized data already present on the user's computer (validated Mac path and Windows source preview).
 
 - Normal operation is offline. The Plugin declares no remote MCP server, telemetry service, account
   login, analytics endpoint, or background upload.
@@ -37,3 +37,14 @@ WeChat Local Export is designed for authorized data already present on the user'
 The future signed Companion should keep key ownership in macOS Keychain and expose only an
 allowlisted high-level protocol. Installing or uninstalling a Skill must never silently delete local
 exports, snapshots, or credentials.
+
+## Windows state
+
+Windows initialization is a separate explicit action using bounded read-only
+access to the same user's verified official WeChat process. It never injects,
+modifies the process, persists a memory dump, requests debug privilege or uploads
+data. Matching initialization material is protected by current-user DPAPI and
+private ACLs allowing only that user and SYSTEM. Capturing it does not authorize
+retaining plaintext; that decision is separately confirmed. Ordinary installation
+does not inspect WeChat at all. Current-account state and source paths never appear
+in public reports. Native fixture CI contains only synthetic data.

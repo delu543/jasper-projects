@@ -1,10 +1,20 @@
 # Codex project instructions
 
-This repository is the local macOS project “微信数据提取项目”.
+This repository is “微信数据提取项目”: existing macOS support plus Windows 10/11 x64 + WeChat 4.x source preview.
 
 ## First relevant request
 
 When the user asks to install, check, use, scan, summarize, or export WeChat data:
+
+On native Windows, use `scripts/codex_bootstrap.ps1 doctor` first. If installation is needed,
+explain pinned public wheel downloads and then use `scripts/codex_bootstrap.ps1 install`.
+Missing CPython 3.12 x64 or VC++ runtime requires clear installation guidance and approval.
+Do not run Mac scripts, Swift, Frida, WSL or change security policies to substitute for native support.
+Read the selected Skill's `references/windows.md` completely before its platform actions.
+Windows native CI uses synthetic data, not a live WeChat account; keep this limitation visible.
+This route does not authorize key initialization, snapshot retention, or real-data testing.
+
+On macOS, preserve the existing flow:
 
 1. Run `./scripts/codex_bootstrap.sh doctor`.
 2. If the result is `needs_install`, explain that the installer downloads pinned public Python
@@ -27,7 +37,7 @@ asks Codex to install or use this project.
 
 ## Safety boundaries
 
-- Supported production scope is local macOS with official Mac WeChat 4.x.
+- Existing validated scope is local macOS with official Mac WeChat 4.x. Windows is a source preview; do not claim Windows live acceptance without actual evidence.
 - Never upload chat content, database files, keys, profiles, or exported media.
 - Never commit files from `work/`, `outputs/`, `.codex/`, `.build/`, task directories, application
   support directories, or WeChat containers.

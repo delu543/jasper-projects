@@ -23,6 +23,11 @@ import struct
 import subprocess
 import sys
 import tempfile
+
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from live_tools.platform_support import WINDOWS, private_chmod, require_no_reparse
 from typing import Any, Callable, Iterable, Iterator, Optional, Union
 
 
@@ -131,6 +136,7 @@ def _ensure_output_outside_vault(output: Path, vault: Path) -> Path:
     expanded = output.expanduser()
     if expanded.is_symlink():
         raise VaultError(f"输出路径不能是符号链接：{expanded}")
+    require_no_reparse(expanded)
     resolved = expanded.resolve()
     if resolved == vault or _is_relative_to(resolved, vault):
         raise VaultError("输出不能写入已解密 vault；请选择独立的私有输出目录")
@@ -138,6 +144,7 @@ def _ensure_output_outside_vault(output: Path, vault: Path) -> Path:
 
 
 def _assert_source_path(path: Path, vault: Path) -> Path:
+    require_no_reparse(path)
     resolved = path.resolve()
     if not _is_relative_to(resolved, vault):
         raise VaultError(f"数据库路径逃逸出 vault：{path}")
@@ -1032,7 +1039,7 @@ def extract(
 
     output.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     staging = Path(tempfile.mkdtemp(prefix=f".{output.name}-", dir=output.parent))
-    os.chmod(staging, 0o700)
+    private_chmod(staging, 0o700)
     manifest_rows: list[dict[str, Any]] = []
     try:
         for item in prepared:
@@ -1052,7 +1059,7 @@ def extract(
             )
             destination = staging / name
             with destination.open("xb") as handle:
-                os.fchmod(handle.fileno(), 0o600)
+                private_chmod(handle.fileno(), 0o600)
                 # Preserve VoiceInfo.voice_data byte-for-byte.  Tencent's
                 # optional 0x02 prefix is part of the source artifact and is
                 # accepted by the decoder used in the next stage.
@@ -1103,14 +1110,14 @@ def _write_json_private(path: Path, value: Any, vault: Optional[Path]) -> None:
     fd, temporary_name = tempfile.mkstemp(prefix=f".{destination.name}.", dir=destination.parent)
     temporary = Path(temporary_name)
     try:
-        os.fchmod(fd, 0o600)
+        private_chmod(fd, 0o600)
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
             handle.write(_json_dump(value))
             handle.write("\n")
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(temporary, destination)
-        os.chmod(destination, 0o600)
+        private_chmod(destination, 0o600)
     except BaseException:
         try:
             os.close(fd)
@@ -1124,6 +1131,7 @@ def _require_plain_file(path: Path, description: str) -> Path:
     """Require an existing regular file without following a final symlink."""
 
     try:
+        require_no_reparse(path)
         if path.is_symlink() or not path.is_file():
             raise VaultError(f"{description} 不是普通文件或是符号链接：{path}")
     except OSError as error:
@@ -1304,6 +1312,21 @@ def _load_extract_manifest(
 
 
 def _default_silk_decoder(source: Path, destination: Path, sample_rate: int) -> None:
+    if WINDOWS:
+        try:
+            import pysilk
+            data = source.read_bytes()
+            inspect_silk(data)
+            # pysilk-mod's public validator expects Tencent's one-byte prefix.
+            if not data.startswith(TENCENT_SILK_PREFIX):
+                data = TENCENT_SILK_PREFIX + data
+            pcm = pysilk.decode(data, sample_rate=sample_rate)
+            with destination.open("wb") as handle:
+                private_chmod(handle.fileno(), 0o600)
+                handle.write(pcm)
+            return
+        except Exception as error:
+            raise VaultError("Windows SILK 解码失败；请检查已安装解码器和 VC++ 运行库") from error
     try:
         import pilk  # type: ignore[import-not-found]
     except ImportError as error:
@@ -1460,7 +1483,7 @@ def _convert_pcm_with_ffmpeg(
         raise VaultError(
             f"ffmpeg PCM 转换失败（exit={completed.returncode}）：{detail}"
         )
-    os.chmod(output_path, 0o600)
+    private_chmod(output_path, 0o600)
     return {
         "output": str(output_path.resolve()),
         "durationMilliseconds": duration_ms,
@@ -1521,7 +1544,7 @@ def _validate_conversion_report(
 def decode(
     extract_dir: Union[str, Path],
     output_dir: Union[str, Path],
-    swift_bin: Union[str, Path],
+    swift_bin: Optional[Union[str, Path]],
     title: Optional[str] = None,
     *,
     decoder: Optional[SilkDecoder] = None,
@@ -1544,10 +1567,15 @@ def decode(
     ):
         raise VaultError("--title 必须是 1...200 个不含控制字符的可见字符")
 
-    raw_swift = Path(swift_bin).expanduser()
-    swift = _require_plain_file(raw_swift.resolve(), "Swift 工具")
-    if not os.access(swift, os.X_OK):
-        raise VaultError(f"Swift 工具不可执行：{swift}")
+    native_ffmpeg = WINDOWS and swift_bin is None
+    swift = None
+    if not native_ffmpeg:
+        if swift_bin is None:
+            raise VaultError("Mac 完整语音归档需要 Swift 工具")
+        raw_swift = Path(swift_bin).expanduser()
+        swift = _require_plain_file(raw_swift.resolve(), "Swift 工具")
+        if not os.access(swift, os.X_OK):
+            raise VaultError(f"Swift 工具不可执行：{swift}")
 
     raw_output = Path(output_dir).expanduser()
     if raw_output.is_symlink():
@@ -1559,11 +1587,12 @@ def decode(
         raise VaultError(f"输出目录已存在，拒绝覆盖：{output}")
     output.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     staging = Path(tempfile.mkdtemp(prefix=f".{output.name}-", dir=output.parent))
-    os.chmod(staging, 0o700)
+    private_chmod(staging, 0o700)
     decode_one = decoder or _default_silk_decoder
     conversion_stats: dict[str, Any] = {
         "converter_mode": (
-            "custom" if converter is not None else "swift-with-batch-ffmpeg-fallback"
+            "custom" if converter is not None else
+            "windows-ffmpeg" if native_ffmpeg else "swift-with-batch-ffmpeg-fallback"
         ),
         "item_count": len(voices),
         "conversion_attempt_count": 0,
@@ -1575,7 +1604,7 @@ def decode(
         "circuit_breaker_opened": False,
         "circuit_breaker_opened_at_sequence": None,
     }
-    swift_fallback_circuit_open = False
+    swift_fallback_circuit_open = native_ffmpeg
     items: list[dict[str, Any]] = []
     try:
         for voice in voices:
@@ -1593,14 +1622,14 @@ def decode(
             m4a_path = staging / f"{base_name}.m4a"
             try:
                 with pcm_path.open("xb") as handle:
-                    os.fchmod(handle.fileno(), 0o600)
+                    private_chmod(handle.fileno(), 0o600)
                 previous_umask = os.umask(0o077)
                 try:
                     decode_one(source, pcm_path, PCM_SAMPLE_RATE)
                 finally:
                     os.umask(previous_umask)
                 _require_plain_file(pcm_path, "解码后的 PCM")
-                os.chmod(pcm_path, 0o600)
+                private_chmod(pcm_path, 0o600)
                 _validate_pcm(
                     pcm_path,
                     voice["expected_duration_ms"],
@@ -1666,7 +1695,7 @@ def decode(
                 if not isinstance(report, dict):
                     raise VaultError("PCM 转换器必须返回 JSON 对象格式的报告")
                 _require_plain_file(m4a_path, "转换后的 M4A")
-                os.chmod(m4a_path, 0o600)
+                private_chmod(m4a_path, 0o600)
                 converted_duration, converted_hash = _validate_conversion_report(
                     report, m4a_path, voice["expected_duration_ms"]
                 )
@@ -1702,7 +1731,7 @@ def decode(
             if path.name != "direct-manifest.json" and path.suffix.lower() != ".m4a":
                 raise VaultError(f"临时输出目录出现未预期文件：{path.name}")
             _require_plain_file(path, "最终输出")
-            os.chmod(path, 0o600)
+            private_chmod(path, 0o600)
         staging.rename(output)
         return {
             "output_dir": str(output),

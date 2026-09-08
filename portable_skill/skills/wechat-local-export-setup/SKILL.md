@@ -1,9 +1,19 @@
 ---
 name: wechat-local-export-setup
-description: Explicit-only setup for the authorized local Mac WeChat 4.x export helper, including permission diagnosis, source-development dependency checks, and a separately confirmed one-time database-key initialization. Never trigger implicitly from an ordinary export request, missing-key error, or vague request to make WeChat export work.
+description: Explicit-only setup for the authorized local macOS / Windows WeChat 4.x export helper, including permission diagnosis, source-development dependency checks, and a separately confirmed one-time database-key initialization. Never trigger implicitly from an ordinary export request, missing-key error, or vague request to make WeChat export work.
 ---
 
 # WeChat Local Export Setup
+
+## Platform routing
+
+On native Windows 10/11 x64, first read [the Windows route](references/windows.md)
+completely. It replaces Mac paths, runtime and platform-specific actions only.
+Keep all shared consent, current-account isolation, exact scan, no-upload and no-UI
+boundaries. Windows is a source preview, not inherited Mac live validation.
+Do not run Mac-only Swift, Frida, APFS or app-copy instructions on Windows.
+On macOS, use the existing workflow below unchanged.
+
 
 This is a high-sensitivity, explicit-only setup workflow. `agents/openai.yaml` must keep `allow_implicit_invocation: false`.
 

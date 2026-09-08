@@ -1,5 +1,16 @@
 # WeChat Local Export：安装、升级与卸载
 
+## Windows 源码预览入口
+
+Windows 10/11 x64 + 官方微信 4.x 用户应打开完整 GitHub 源码（不是下面的旧版 Plugin-only ZIP），
+使用 `scripts/codex_bootstrap.ps1 doctor` / `install`。Windows 安装器注册两个 Skill，
+使用 CPython 3.12 x64、DPAPI/ACL 和原生 FFmpeg，不运行 Swift 或 Frida。
+详见 [Windows 说明](../docs/WINDOWS_SUPPORT.md)。没有 Windows 官方微信实机验证时不能宣称正式支持。
+以下历史 ZIP、Mac shell、Swift、Frida、Keychain 与卸载步骤均是 **Mac 路线**。
+
+Codex 用户级 Skill 位置与显式调用约定参照
+[OpenAI 官方 Skill 文档](https://developers.openai.com/codex/skills)；本仓库仍保留显式-only 初始化。
+
 ## 当前交付状态
 
 这是一个 **Plugin-ready 的源码开发包**，不是已经签名、公证的消费级 Mac 产品。

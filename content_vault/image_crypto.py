@@ -10,6 +10,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import os
+
+from live_tools.platform_support import require_no_reparse
 from pathlib import Path
 import re
 import stat
@@ -186,7 +188,8 @@ def _sha256_regular_file(path: Path) -> str:
     if not stat.S_ISREG(before.st_mode):
         raise UnsafeImagePathError("candidate is not a regular file: {}".format(path))
 
-    flags = os.O_RDONLY
+    require_no_reparse(path)
+    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
     flags |= getattr(os, "O_CLOEXEC", 0)
     flags |= getattr(os, "O_NOFOLLOW", 0)
     try:

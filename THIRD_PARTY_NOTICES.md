@@ -30,3 +30,21 @@ If a future release bundles any wheel, virtual environment, FFmpeg build, SILK d
 Companion containing these components, the release owner must perform a new license review and
 ship the applicable complete license texts, component/build BOM, notices, and corresponding-source
 materials. This file is an engineering inventory, not legal advice.
+
+## Windows source preview
+
+Windows uses `scripts/requirements-windows.txt`: pywin32 311 (PSF), psutil 7.0.0
+(BSD-3-Clause), pysilk-mod 1.6.4 (upstream BSD-style/MIT component notices), and the
+same pinned PyCryptodome, zstandard and imageio-ffmpeg versions listed above.
+The installer downloads CPython 3.12 x64 wheels from PyPI with verified hashes;
+the repository does not redistribute their binaries. pysilk-mod replaces pilk on
+Windows only. Its full license is retained inside its upstream wheel:
+[license](https://github.com/DCZYewen/Python-Silk-Module/blob/master/LICENSE).
+The upstream package contains SILK/pybind components whose notices must be kept
+when redistributing. FFmpeg's component licenses remain separate from its wrapper;
+commercial rebundling is not approved by this engineering adaptation.
+
+Native Windows code calls Microsoft APIs through pywin32/ctypes; it does not copy
+or bundle third-party credential extraction code. The public SQLite lock protocol,
+SQLCipher design and MSVC string ABI informed the implementation. See
+[review and validation boundaries](docs/WINDOWS_SUPPORT.md).

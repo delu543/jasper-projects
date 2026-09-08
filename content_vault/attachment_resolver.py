@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 import hashlib
 import os
+
+from live_tools.platform_support import private_chmod, require_no_reparse
 from pathlib import Path
 import stat
 from typing import Any, Iterable, Optional
@@ -30,7 +32,7 @@ def _digest_file(path: Path, algorithm: str = "sha256") -> str:
     before = path.lstat()
     if stat.S_ISLNK(before.st_mode) or not stat.S_ISREG(before.st_mode):
         raise VaultError("附件候选不是普通文件")
-    descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+    descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0))
     try:
         opened = os.fstat(descriptor)
         if (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino):
@@ -307,15 +309,19 @@ def copy_verified_file(source: Path, destination: Path, expected_sha256: str) ->
     if stat.S_ISLNK(before.st_mode) or not stat.S_ISREG(before.st_mode):
         raise VaultError("附件源文件不再是普通文件")
     destination.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    source_flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    source_flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
     destination_flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
     digest = hashlib.sha256()
     written = 0
+    require_no_reparse(source)
+    require_no_reparse(destination)
+    source_flags |= getattr(os, "O_BINARY", 0)
+    destination_flags |= getattr(os, "O_BINARY", 0)
     source_fd = os.open(source, source_flags)
     try:
         destination_fd = os.open(destination, destination_flags, 0o600)
         try:
-            os.fchmod(destination_fd, 0o600)
+            private_chmod(destination_fd, 0o600)
             while True:
                 chunk = os.read(source_fd, 1024 * 1024)
                 if not chunk:

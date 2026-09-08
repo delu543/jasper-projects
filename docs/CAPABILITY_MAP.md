@@ -31,3 +31,17 @@ prior export capability was removed. The historical-directory account choice UX 
 replaced by fail-closed current official-session binding. Strict export is the default. Partial output
 requires a separate `--allow-partial` decision and keeps every unresolved state visible in
 `manifest.json`.
+
+## Windows additive preview
+
+| Capability | Status | Safety contract | Verification gate |
+| --- | --- | --- | --- |
+| Native Windows install and Codex discovery | experimental | CPython 3.12 x64, pinned wheels; no Swift/Frida; no WeChat access at install; preserve foreign skills and prior releases | Native Windows bootstrap and idempotency CI; clean end-user Windows install remains external |
+| Windows current-account setup | experimental | Signed Tencent 4.x same-user process, exact open-file two-sample binding; explicit per-account capture; bounded VM_READ only; salt/first-page HMAC check; DPAPI/ACL state | Synthetic routing/key/ACL/DPAPI tests; actual WeChat build/handle/key-layout acceptance not yet recorded |
+| Windows latest snapshot | experimental | Native SQLite SHM shared locks or deny-write handles for inactive shards; committed WAL replay; initialized shard census; no source writes, no stale fallback | Native SQLite writer lock + synthetic encrypted latest-commit test; large live WeChat database acceptance remains external |
+| Windows shared export pipeline | experimental | Shared exact plans and strict atomic archives; native SILK/FFmpeg including per-item M4A and MP4; unchanged media availability restrictions | Native generated-audio integration + Mac regression; Windows real media cache compatibility remains external |
+
+Removed / Changed Existing Capabilities: none removed. Mac routing, profile storage, capture,
+APFS/OFD coordination, Swift and legacy command entry points remain active. Shared changes are
+platform-aware privacy operations, binary-safe I/O and a Windows FFmpeg branch. Windows does not
+inherit the Mac real-data verification counts above. See [Windows scope](WINDOWS_SUPPORT.md).

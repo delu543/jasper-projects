@@ -23,7 +23,10 @@ import ctypes
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import errno
-import fcntl
+try:
+    import fcntl
+except ImportError:  # Windows uses its own LockFileEx lease implementation.
+    fcntl = None
 import hashlib
 import json
 import math
@@ -36,6 +39,13 @@ import subprocess
 import sys
 import time
 from typing import Any, Callable, Iterable, Mapping, Optional, Sequence
+
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from live_tools.platform_support import (
+    WINDOWS, private_chmod, private_mkdir, read_at, require_no_reparse, write_at,
+)
 
 
 PAGE_SIZE = 4096
@@ -570,7 +580,8 @@ def assert_no_wechat_holders(
 
 
 def _open_readonly_no_follow(path: Path) -> int:
-    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+    require_no_reparse(path)
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
     try:
         return os.open(path, flags)
     except OSError as exc:
@@ -584,14 +595,25 @@ def _open_private_exclusive(path: Path) -> int:
         | os.O_EXCL
         | getattr(os, "O_CLOEXEC", 0)
         | getattr(os, "O_NOFOLLOW", 0)
+        | getattr(os, "O_BINARY", 0)
     )
     try:
-        return os.open(path, flags, 0o600)
+        descriptor = os.open(path, flags, 0o600)
+        if WINDOWS:
+            try:
+                private_chmod(descriptor, 0o600)
+            except BaseException:
+                os.close(descriptor)
+                raise
+        return descriptor
     except OSError as exc:
         raise SnapshotError("无法创建私有临时文件") from exc
 
 
 def _private_mkdir(path: Path) -> None:
+    if WINDOWS:
+        private_mkdir(path)
+        return
     path.mkdir(parents=True, mode=0o700, exist_ok=True)
     info = _assert_directory(path, "私有输出目录")
     if info.st_uid != os.geteuid() or stat.S_IMODE(info.st_mode) & 0o077:
@@ -599,6 +621,11 @@ def _private_mkdir(path: Path) -> None:
 
 
 def _fsync_directory(path: Path) -> None:
+    if WINDOWS:
+        # Windows does not expose directory fsync. File bytes were fsynced before
+        # the same-volume, no-overwrite publication; never suppress file errors.
+        require_no_reparse(path)
+        return
     flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_CLOEXEC", 0)
     descriptor = os.open(path, flags)
     try:
@@ -873,12 +900,12 @@ def _read_locked_online_wal_anchor(
         lease.fingerprint,
     ):
         raise OnlineSnapshotUnavailable("在线快照 SHM 锁定后身份发生变化")
-    header_prefix = os.pread(
+    header_prefix = read_at(
         lease.descriptor,
         WAL_SHM_LOCK_OFFSET,
         0,
     )
-    checkpoint_tail = os.pread(
+    checkpoint_tail = read_at(
         lease.descriptor,
         WAL_SHM_HEADER_PREFIX_BYTES - 128,
         128,
@@ -947,7 +974,7 @@ def _read_locked_online_wal_anchor(
                 raise OnlineSnapshotUnavailable(
                     "在线快照 WAL 在打开前发生变化"
                 )
-            wal_header = os.pread(wal_fd, WAL_HEADER_BYTES, 0)
+            wal_header = read_at(wal_fd, WAL_HEADER_BYTES, 0)
             wal_magic, _ = _validate_wal_header(wal_header)
             if checksum_flag != (wal_magic & 1):
                 raise OnlineSnapshotUnavailable(
@@ -1424,11 +1451,12 @@ def materialize_copied_database_with_wal(
                 os.O_RDWR
                 | getattr(os, "O_CLOEXEC", 0)
                 | getattr(os, "O_NOFOLLOW", 0)
+                | getattr(os, "O_BINARY", 0)
             )
             database_descriptor = os.open(work, flags)
-            database_salt = os.pread(database_descriptor, 16, 0)
+            database_salt = read_at(database_descriptor, 16, 0)
             for frame in plan.frames:
-                page = os.pread(
+                page = read_at(
                     wal_descriptor,
                     PAGE_SIZE,
                     frame.page_offset,
@@ -1438,7 +1466,7 @@ def materialize_copied_database_with_wal(
                 if frame.page_number == 1 and page[:16] != database_salt:
                     raise SnapshotError("WAL page 1 与数据库 salt 不一致")
                 if frame.page_number <= plan.committed_database_pages:
-                    written = os.pwrite(
+                    written = write_at(
                         database_descriptor,
                         page,
                         (frame.page_number - 1) * PAGE_SIZE,
@@ -1450,6 +1478,10 @@ def materialize_copied_database_with_wal(
                 plan.committed_database_pages * PAGE_SIZE,
             )
             os.fsync(database_descriptor)
+            # Windows cannot unlink the materialization path while a CRT
+            # descriptor without FILE_SHARE_DELETE is still open.
+            os.close(database_descriptor)
+            database_descriptor = None
         final = _assert_regular(work, "WAL materialize 输出")
         expected_pages = (
             plan.committed_database_pages

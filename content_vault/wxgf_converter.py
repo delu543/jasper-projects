@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import os
+
+from live_tools.platform_support import private_chmod, require_no_reparse
 from pathlib import Path
 import stat
 import subprocess
@@ -79,11 +81,11 @@ def convert_wxgf_to_jpeg(
 
     with tempfile.TemporaryDirectory(prefix="wechat-wxgf-") as temporary:
         root = Path(temporary)
-        os.chmod(root, 0o700)
+        private_chmod(root, 0o700)
         hevc_path = root / "frame.h265"
         jpeg_path = root / "frame.jpg"
         with hevc_path.open("xb") as handle:
-            os.fchmod(handle.fileno(), 0o600)
+            private_chmod(handle.fileno(), 0o600)
             handle.write(data[start:])
             handle.flush()
             os.fsync(handle.fileno())

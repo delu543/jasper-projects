@@ -11,6 +11,8 @@ its output.
 from __future__ import annotations
 
 import argparse
+import ctypes
+import json
 import os
 from pathlib import Path
 import re
@@ -122,13 +124,41 @@ def _installed_helper_candidates() -> Iterable[Path]:
             yield configured_path
 
 
+def _windows_support() -> Path:
+    buffer = ctypes.create_unicode_buffer(32768)
+    if ctypes.windll.shell32.SHGetFolderPathW(None, 28, None, 0, buffer) != 0:
+        raise ClientError("无法定位 Windows 私有安装目录")
+    return Path(buffer.value) / "WeChatLocalExport"
+
+
 def _candidate_roots() -> Iterable[Path]:
     seed = Path(__file__).resolve()
     yield seed.parent
     yield from seed.parents
+    if sys.platform == "win32":
+        support = _windows_support()
+        marker = support / "app/current.json"
+        try:
+            if marker.stat().st_size > 4096:
+                raise ValueError()
+            release = json.loads(marker.read_text(encoding="utf-8"))["release"]
+            if not re.fullmatch(r"[0-9a-f]{64}", release):
+                raise ValueError()
+            root = support / "app/releases" / release
+            if any(p.is_symlink() or p.is_junction() for p in (root, *root.parents)):
+                raise ValueError()
+            yield root
+        except (OSError, ValueError, KeyError):
+            raise ClientError("Windows 安装标记缺失或不安全；请运行 bootstrap doctor") from None
 
 
 def _development_python(project_root: Path) -> Path:
+    if sys.platform == "win32":
+        os.environ.setdefault("PYTHONUTF8", "1")
+        candidate = _windows_support() / "tools/python/Scripts/python.exe"
+        if not _is_executable_file(candidate):
+            raise ClientError("Windows 私有运行环境缺失；请运行 bootstrap install")
+        return _unresolved_absolute_path(candidate)
     support_override = os.environ.get("WECHAT_LOCAL_EXPORT_TOOLS_DIR")
     if support_override and os.environ.get(UNVERIFIED_HELPER_OPT_IN) == "1":
         support = Path(support_override).expanduser()

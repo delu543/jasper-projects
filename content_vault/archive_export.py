@@ -17,6 +17,8 @@ import stat
 import struct
 import subprocess
 import tempfile
+
+from live_tools.platform_support import WINDOWS, private_chmod, require_no_reparse
 import time
 from typing import Any, Optional, Union
 
@@ -79,7 +81,7 @@ MAX_FFMPEG_AUDIT_CHARACTERS = 4_000
 def _private_write(path: Path, data: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     with path.open("xb") as handle:
-        os.fchmod(handle.fileno(), 0o600)
+        private_chmod(handle.fileno(), 0o600)
         handle.write(data)
         handle.flush()
         os.fsync(handle.fileno())
@@ -91,6 +93,7 @@ def _private_text(path: Path, value: str) -> None:
 
 def _validate_account_root(value: Union[str, Path]) -> Path:
     requested = Path(value).expanduser()
+    require_no_reparse(requested)
     if requested.is_symlink():
         raise VaultError("微信账号目录不能是符号链接")
     account = requested.resolve()
@@ -105,7 +108,8 @@ def _read_stable(path: Path, expected_sha256: str) -> bytes:
         raise VaultError("图片候选不再是普通文件")
     if before.st_size <= 0 or before.st_size > MAX_IMAGE_DAT_BYTES:
         raise VaultError("图片候选大小超出安全范围")
-    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    require_no_reparse(path)
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
     descriptor = os.open(path, flags)
     try:
         opened = os.fstat(descriptor)
@@ -287,7 +291,7 @@ def _export_image(
         "asset_id": asset_id,
         "kind": "image",
         "status": "resolved",
-        "relative_path": str(relative),
+        "relative_path": relative.as_posix(),
         "resource_md5": resource_md5,
         "quality": resolution.quality,
         "thumbnail_only": resolution.quality == "thumbnail",
@@ -345,7 +349,7 @@ def _export_file(message: dict[str, Any], account: Path, staging: Path) -> dict[
     output_name = f"{message['sequence']:06d}-{resolution.metadata['filename']}"
     relative = Path("media/files") / output_name
     copy_verified_file(resolution.source, staging / relative, resolution.metadata["sha256"])
-    asset["relative_path"] = str(relative)
+    asset["relative_path"] = relative.as_posix()
     return asset
 
 
@@ -369,7 +373,7 @@ def _export_sticker(message: dict[str, Any], account: Path, staging: Path) -> di
     extension = str(resolution.metadata.get("format") or "bin")
     relative = Path("media/stickers") / f"{message['sequence']:06d}-{expected_md5}.{extension}"
     copy_verified_file(resolution.source, staging / relative, resolution.metadata["sha256"])
-    asset["relative_path"] = str(relative)
+    asset["relative_path"] = relative.as_posix()
     return asset
 
 
@@ -564,23 +568,21 @@ def _write_ffmpeg_stdin(
                 "ffmpeg-stream",
                 VOICE_MP4_STREAM_TIMEOUT_SECONDS,
             )
-        try:
-            _, writable, _ = select.select(
-                [],
-                [descriptor],
-                [],
-                min(timeout, 0.25),
-            )
-        except OSError as error:
-            raise BrokenPipeError("无法等待 ffmpeg PCM 输入") from error
-        if not writable:
-            continue
+        if not WINDOWS:
+            try:
+                _, writable, _ = select.select([], [descriptor], [], min(timeout, 0.25))
+            except OSError as error:
+                raise BrokenPipeError("无法等待 ffmpeg PCM 输入") from error
+            if not writable:
+                continue
         try:
             written = os.write(
                 descriptor,
                 remaining[:VOICE_PCM_WRITE_CHUNK_BYTES],
             )
         except BlockingIOError:
+            if WINDOWS:
+                time.sleep(min(timeout, 0.01))
             continue
         except OSError as error:
             raise BrokenPipeError("ffmpeg PCM 输入管道断开") from error
@@ -801,7 +803,7 @@ def _stream_voice_pcm_to_mp4(
     deadline = time.monotonic() + VOICE_MP4_STREAM_TIMEOUT_SECONDS
     try:
         with stderr_path.open("xb") as stderr_handle:
-            os.fchmod(stderr_handle.fileno(), 0o600)
+            private_chmod(stderr_handle.fileno(), 0o600)
             process = subprocess.Popen(
                 arguments,
                 stdin=subprocess.PIPE,
@@ -826,14 +828,14 @@ def _stream_voice_pcm_to_mp4(
                 pcm_path = pcm_root / f"{sequence:04d}.pcm"
                 try:
                     with pcm_path.open("xb") as pcm_handle:
-                        os.fchmod(pcm_handle.fileno(), 0o600)
+                        private_chmod(pcm_handle.fileno(), 0o600)
                     previous_umask = os.umask(0o077)
                     try:
                         _default_silk_decoder(source, pcm_path, PCM_SAMPLE_RATE)
                     finally:
                         os.umask(previous_umask)
                     _require_plain_file(pcm_path, f"第 {sequence} 条解码 PCM")
-                    os.chmod(pcm_path, 0o600)
+                    private_chmod(pcm_path, 0o600)
                     decoded_duration = _validate_pcm(
                         pcm_path,
                         voice["expected_duration_ms"],
@@ -935,7 +937,7 @@ def _stream_voice_pcm_to_mp4(
         _require_plain_file(output_path, "MP4-only 最终 MP4")
         if output_path.stat().st_size <= 0:
             raise VaultError("MP4-only 最终 MP4 为空")
-        os.chmod(output_path, 0o600)
+        private_chmod(output_path, 0o600)
         expected_duration = int(round(total_samples * 1_000 / PCM_SAMPLE_RATE))
         inspection = _probe_streamed_voice_mp4(
             ffmpeg,
@@ -1155,7 +1157,7 @@ def _assemble_direct_with_ffmpeg(
     if completed.returncode != 0 or not output_path.is_file():
         detail = (completed.stderr or completed.stdout or "无错误输出").strip()[-4000:]
         raise VaultError(f"ffmpeg 语音 MP4 合并失败：{detail}")
-    os.chmod(output_path, 0o600)
+    private_chmod(output_path, 0o600)
 
     probe = subprocess.run(
         [
@@ -1216,7 +1218,7 @@ def _export_voices(
     voice_messages = [item for item in messages if item["kind"] == "voice"]
     if not voice_messages:
         return [], None
-    if swift_bin is None:
+    if swift_bin is None and not WINDOWS:
         return (
             [
                 {
@@ -1229,8 +1231,8 @@ def _export_voices(
             ],
             None,
         )
-    swift = Path(swift_bin).expanduser().resolve()
-    if swift.is_symlink() or not swift.is_file() or not os.access(swift, os.X_OK):
+    swift = Path(swift_bin).expanduser().resolve() if swift_bin is not None else None
+    if swift is not None and (swift.is_symlink() or not swift.is_file() or not os.access(swift, os.X_OK)):
         raise VaultError("Swift 语音工具不存在或不可执行")
     voice_plan = _voice_subplan(plan, messages)
     if any(item["duration_ms"] is None for item in voice_plan["voices"]):
@@ -1253,33 +1255,36 @@ def _export_voices(
     m4a_dir = staging / "media/voices"
     decode_report = decode_voices(silk_dir, m4a_dir, swift, title)
     mp4_path = staging / "media/voice.mp4"
-    completed = subprocess.run(
-        [str(swift), "assemble-direct", "--manifest", decode_report["manifest"], "--output", str(mp4_path)],
-        capture_output=True,
-        text=True,
-        check=False,
-        timeout=900,
-    )
-    if completed.returncode != 0 or not mp4_path.is_file():
-        detail = (completed.stderr or completed.stdout or "无错误输出").strip()[-4000:]
-        known_encoder_failure = (
-            "Cannot Encode" in detail
-            or (
-                "1718449215" in detail
-                and "avfaudio" in detail.casefold()
+    if swift is None:
+        _assemble_direct_with_ffmpeg(Path(decode_report["manifest"]), mp4_path, title=title)
+    else:
+        completed = subprocess.run(
+            [str(swift), "assemble-direct", "--manifest", decode_report["manifest"], "--output", str(mp4_path)],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=900,
+        )
+        if completed.returncode != 0 or not mp4_path.is_file():
+            detail = (completed.stderr or completed.stdout or "无错误输出").strip()[-4000:]
+            known_encoder_failure = (
+                "Cannot Encode" in detail
+                or (
+                    "1718449215" in detail
+                    and "avfaudio" in detail.casefold()
+                )
             )
-        )
-        if not known_encoder_failure:
-            raise VaultError(f"语音 MP4 合并失败：{detail}")
-        if mp4_path.is_symlink():
-            raise VaultError("Swift 失败后出现不安全的 MP4 路径")
-        mp4_path.unlink(missing_ok=True)
-        _assemble_direct_with_ffmpeg(
-            Path(decode_report["manifest"]),
-            mp4_path,
-            title=title,
-        )
-    os.chmod(mp4_path, 0o600)
+            if not known_encoder_failure:
+                raise VaultError(f"语音 MP4 合并失败：{detail}")
+            if mp4_path.is_symlink():
+                raise VaultError("Swift 失败后出现不安全的 MP4 路径")
+            mp4_path.unlink(missing_ok=True)
+            _assemble_direct_with_ffmpeg(
+                Path(decode_report["manifest"]),
+                mp4_path,
+                title=title,
+            )
+    private_chmod(mp4_path, 0o600)
     direct_manifest = json.loads(Path(decode_report["manifest"]).read_text(encoding="utf-8"))
     assets: list[dict[str, Any]] = []
     direct_items = direct_manifest.get("items")
@@ -1311,7 +1316,7 @@ def _export_voices(
                 "status": "resolved",
                 "server_id": server_id,
                 "voice_sequence": item["sequence"],
-                "relative_path": str(relative),
+                "relative_path": relative.as_posix(),
                 "format": "m4a",
                 "duration_ms": item["expected_duration_milliseconds"],
                 "sha256": item["sha256"],
@@ -1939,7 +1944,7 @@ def export_archive(
         raise VaultError(f"输出目录已存在，拒绝覆盖：{output}")
     output.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     staging = Path(tempfile.mkdtemp(prefix=f".{output.name}-", dir=output.parent))
-    os.chmod(staging, 0o700)
+    private_chmod(staging, 0o700)
     messages = deepcopy(plan["messages"])
     for message in messages:
         message["_chat_id"] = plan["chat"]["chat_id"]
@@ -2021,7 +2026,7 @@ def export_archive(
             for path in staging.iterdir():
                 if path.is_symlink() or not path.is_file():
                     raise VaultError("MP4-only 临时输出包含非普通文件")
-                os.chmod(path, 0o600)
+                private_chmod(path, 0o600)
             verification = _verify_staged_voice_mp4_only(
                 staging, compact_manifest, plan
             )
@@ -2157,9 +2162,9 @@ def export_archive(
             if path.is_symlink():
                 raise VaultError("临时输出中出现符号链接")
             if path.is_file():
-                os.chmod(path, 0o600)
+                private_chmod(path, 0o600)
             elif path.is_dir():
-                os.chmod(path, 0o700)
+                private_chmod(path, 0o700)
         verification = _verify_staged_archive(staging, manifest, messages)
         staging.rename(output)
         return {

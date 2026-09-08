@@ -13,6 +13,8 @@ import sqlite3
 import sys
 from typing import Any, Optional
 
+from live_tools.platform_support import WINDOWS
+
 from content_vault.archive_export import _image_key_candidates, export_archive
 from content_vault.profile import write_account_profile, write_profile
 from content_vault.scanner import build_content_plan
@@ -38,13 +40,14 @@ def doctor(
 ) -> dict[str, Any]:
     checks: list[dict[str, Any]] = []
     macos = sys.platform == "darwin"
+    supported_platform = macos or (WINDOWS and sys.maxsize > 2**32 and sys.version_info >= (3, 12))
     checks.append(
         {
             "name": "platform",
-            "ok": macos,
+            "ok": supported_platform,
             "system": platform.system(),
             "machine": platform.machine(),
-            "supported": "macOS only",
+            "supported": "macOS; Windows 10/11 x64 Python 3.12 preview",
         }
     )
     try:
@@ -89,10 +92,10 @@ def doctor(
         "imageio_ffmpeg": importlib.util.find_spec("imageio_ffmpeg") is not None,
         "zstandard": importlib.util.find_spec("zstandard") is not None,
         "pycryptodome": importlib.util.find_spec("Crypto") is not None,
-        "pilk": importlib.util.find_spec("pilk") is not None,
+        "pilk": importlib.util.find_spec("pysilk" if WINDOWS else "pilk") is not None,
     }
     checks.append({"name": "python_dependencies", "ok": all(dependencies.values()), **dependencies})
-    swift_ok = False
+    swift_ok = WINDOWS and dependencies["imageio_ffmpeg"]
     if swift_bin:
         swift = Path(swift_bin).expanduser()
         swift_ok = not swift.is_symlink() and swift.is_file() and os.access(swift, os.X_OK)
@@ -114,10 +117,10 @@ def doctor(
     )
     return {
         "mode": "offline-local-read-only",
-        "ready_for_scan": macos
+        "ready_for_scan": supported_platform
         and bool(vault_report["ready_for_plan"])
         and dependencies["zstandard"],
-        "ready_for_media_export": macos
+        "ready_for_media_export": supported_platform
         and account_ok
         and dependencies["pycryptodome"]
         and dependencies["imageio_ffmpeg"],

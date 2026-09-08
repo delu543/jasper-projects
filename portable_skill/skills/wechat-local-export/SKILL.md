@@ -1,9 +1,19 @@
 ---
 name: wechat-local-export
-description: Export authorized local Mac WeChat 4.x chat content by chat name and time range, including a mandatory read-only dry scan before local export. Trigger for requests such as 微信导出, 微信聊天归档, 群聊文字图片语音文件导出, or combining WeChat voice messages. Do not use this skill to initialize database keys; route that separate operation to the explicitly invoked wechat-local-export-setup skill.
+description: Export authorized local macOS / Windows WeChat 4.x chat content by chat name and time range, including a mandatory read-only dry scan before local export. Trigger for requests such as 微信导出, 微信聊天归档, 群聊文字图片语音文件导出, or combining WeChat voice messages. Do not use this skill to initialize database keys; route that separate operation to the explicitly invoked wechat-local-export-setup skill.
 ---
 
 # WeChat Local Export
+
+## Platform routing
+
+On native Windows 10/11 x64, first read [the Windows route](references/windows.md)
+completely. It replaces Mac paths, runtime and platform-specific actions only.
+Keep all shared consent, current-account isolation, exact scan, no-upload and no-UI
+boundaries. Windows is a source preview, not inherited Mac live validation.
+Do not run Mac-only Swift, Frida, APFS or app-copy instructions on Windows.
+On macOS, use the existing workflow below unchanged.
+
 
 Use this Skill as the conversational and safety layer over a deterministic local helper. Never parse an encrypted database, handle a database key, or control the WeChat UI from the Skill itself.
 
@@ -47,7 +57,7 @@ target.
 
 ## Non-negotiable boundaries
 
-- Work only with the user's authorized, local Mac WeChat 4.x data.
+- Work only with the user's authorized, local WeChat 4.x data on the selected supported platform.
 - Run `doctor`, then `scan`, then wait for an exact user confirmation before `export`, except for the
   explicit same-request direct voice MP4 rule in Step 5.
 - Never silently select a fuzzy chat match, change a time boundary, skip a requested item, or treat a time-group label as an exact message timestamp.

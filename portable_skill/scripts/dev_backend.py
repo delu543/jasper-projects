@@ -27,7 +27,8 @@ ROUTING_SCHEMA_VERSION = 1
 MAX_REQUEST_BYTES = 1_048_576
 DIGEST_PATTERN = re.compile(r"[0-9a-f]{64}\Z")
 ACCOUNT_REF_PATTERN = re.compile(r"account-[0-9a-f]{12}\Z")
-CURRENT_ACCOUNT_METHOD = "official-process-numeric-fd-exact-match"
+CURRENT_ACCOUNT_METHOD = ("official-windows-process-open-files-two-sample" if sys.platform == "win32"
+                          else "official-process-numeric-fd-exact-match")
 PRIVATE_TASKS_RELATIVE = (
     "Library",
     "Application Support",
@@ -185,7 +186,6 @@ def _load_backend(project_root: Path) -> SimpleNamespace:
     try:
         from content_vault.archive_export import export_archive
         from content_vault.cli import doctor
-        from content_vault.profile import load_account_profile
         from content_vault.scanner import (
             build_content_plan,
             find_chat_candidates,
@@ -197,8 +197,14 @@ def _load_backend(project_root: Path) -> SimpleNamespace:
             _resolve_vault,
             _write_json_private,
         )
-        from live_tools.wechat_account_router import bind_active_account
-        from live_tools.wechat_online_refresh import refresh_online_snapshot
+        if sys.platform == "win32":
+            from live_tools.windows.router import bind_active_account
+            from live_tools.windows.state import load_account_profile
+            from live_tools.windows.snapshot import refresh_online_snapshot
+        else:
+            from content_vault.profile import load_account_profile
+            from live_tools.wechat_account_router import bind_active_account
+            from live_tools.wechat_online_refresh import refresh_online_snapshot
     except Exception as exc:
         raise DevelopmentBackendError("无法加载统一内容导出后端") from exc
     return SimpleNamespace(
@@ -262,7 +268,9 @@ def _redact_public_value(value: Any) -> Any:
         if re.search(r"(?i)\bpid\s*[=:]\s*[0-9]+", value):
             return "[private]"
         if (
-            value.startswith("/")
+            re.search(r"[A-Za-z]:[\\/]", value)
+            or chr(92) * 2 in value
+            or value.startswith("/")
             or value.startswith("~/")
             or re.search(r"(?:[：:=<(]|\s)/(?!/)[^\s]", value)
         ):
@@ -284,6 +292,16 @@ def _public_error_text(error: BaseException) -> str:
     return value
 
 
+def _owned_private(path, info=None, *, exact=False):
+    from live_tools.platform_support import is_private
+    return is_private(path, info, exact=exact)
+
+
+def _secure_private_file(descriptor):
+    from live_tools.platform_support import private_chmod
+    private_chmod(descriptor, 0o600)
+
+
 def _read_private_json(path_value: str) -> dict[str, Any]:
     path = Path(path_value).expanduser()
     try:
@@ -294,7 +312,7 @@ def _read_private_json(path_value: str) -> dict[str, Any]:
         raise DevelopmentBackendError("请求必须是普通文件且不能是符号链接")
     if info.st_size <= 0 or info.st_size > MAX_REQUEST_BYTES:
         raise DevelopmentBackendError("请求文件大小不在安全范围内")
-    if info.st_uid != os.geteuid() or stat.S_IMODE(info.st_mode) & 0o077:
+    if not _owned_private(path, info):
         raise DevelopmentBackendError("请求文件必须由当前用户拥有且权限为 0600 或更严格")
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
@@ -312,7 +330,7 @@ def _private_directory(path: Path, label: str) -> Path:
         raise DevelopmentBackendError(f"{label}不存在或不可检查") from exc
     if stat.S_ISLNK(info.st_mode) or not stat.S_ISDIR(info.st_mode):
         raise DevelopmentBackendError(f"{label}必须是非符号链接目录")
-    if info.st_uid != os.geteuid() or stat.S_IMODE(info.st_mode) & 0o077:
+    if not _owned_private(path, info):
         raise DevelopmentBackendError(
             f"{label}必须由当前用户拥有且权限为 0700 或更严格"
         )
@@ -329,7 +347,11 @@ def _direct_request_path(path_value: str) -> Path:
     """Require one request directly beneath the fixed private task root."""
 
     requested = Path(path_value).expanduser()
-    task_root = Path.home().joinpath(*PRIVATE_TASKS_RELATIVE)
+    if sys.platform == "win32":
+        from live_tools.platform_support import support_root
+        task_root = support_root() / "tasks"
+    else:
+        task_root = Path.home().joinpath(*PRIVATE_TASKS_RELATIVE)
     resolved_root = _private_directory(task_root, "私有任务根目录")
     resolved_parent = _private_directory(requested.parent, "私有请求目录")
     if resolved_parent.parent != resolved_root:
@@ -357,7 +379,7 @@ def _private_file_identity(path: Path, label: str) -> tuple[Any, ...]:
         raise DevelopmentBackendError(f"{label}不存在或不可读") from exc
     if stat.S_ISLNK(before.st_mode) or not stat.S_ISREG(before.st_mode):
         raise DevelopmentBackendError(f"{label}必须是普通文件且不能是符号链接")
-    if before.st_uid != os.geteuid() or stat.S_IMODE(before.st_mode) & 0o077:
+    if not _owned_private(path, before):
         raise DevelopmentBackendError(
             f"{label}必须由当前用户拥有且权限为 0600 或更严格"
         )
@@ -410,12 +432,11 @@ def _reserve_internal_plan(request_path: Path) -> Path:
         except OSError as exc:
             raise DevelopmentBackendError("无法创建私有临时扫描计划") from exc
         try:
-            os.fchmod(descriptor, 0o600)
+            _secure_private_file(descriptor)
             info = os.fstat(descriptor)
             if (
                 not stat.S_ISREG(info.st_mode)
-                or info.st_uid != os.geteuid()
-                or stat.S_IMODE(info.st_mode) != 0o600
+                or not _owned_private(descriptor, info, exact=True)
                 or info.st_size != 0
             ):
                 raise DevelopmentBackendError("私有临时扫描计划创建验证失败")
@@ -434,8 +455,7 @@ def _require_reserved_plan(path: Path) -> None:
     if (
         stat.S_ISLNK(info.st_mode)
         or not stat.S_ISREG(info.st_mode)
-        or info.st_uid != os.geteuid()
-        or stat.S_IMODE(info.st_mode) != 0o600
+        or not _owned_private(path, info, exact=True)
         or info.st_size != 0
     ):
         raise DevelopmentBackendError("私有临时扫描计划预留文件不安全")
@@ -457,8 +477,7 @@ def _cleanup_internal_plan(path: Path, request_parent: Path) -> None:
     if (
         stat.S_ISLNK(info.st_mode)
         or not stat.S_ISREG(info.st_mode)
-        or info.st_uid != os.geteuid()
-        or stat.S_IMODE(info.st_mode) & 0o077
+        or not _owned_private(path, info)
     ):
         raise DevelopmentBackendError("本次临时扫描计划状态不安全；拒绝误删")
     try:
@@ -1001,7 +1020,7 @@ def run_export(
         if not _plain_executable(candidate):
             raise DevelopmentBackendError("--swift-bin 不可执行")
         swift_binary = candidate.resolve()
-    elif has_voice:
+    elif has_voice and sys.platform != "win32":
         swift_binary = _find_swift_binary(project_root)
     report = backend.export_archive(
         vault_dir,

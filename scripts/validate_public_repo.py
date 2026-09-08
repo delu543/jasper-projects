@@ -34,6 +34,10 @@ FORBIDDEN_SUFFIXES = {
     ".db-shm",
     ".db-wal",
     ".dylib",
+    ".dll",
+    ".exe",
+    ".pyd",
+    ".dpapi",
     ".jsonl",
     ".key",
     ".log",
@@ -58,6 +62,7 @@ TEXT_SUFFIXES = {
     ".json",
     ".md",
     ".py",
+    ".ps1",
     ".sh",
     ".swift",
     ".txt",
@@ -73,6 +78,7 @@ PRIVATE_PATTERNS = {
     "absolute Linux home": re.compile(
         re.escape(LINUX_HOME_PREFIX) + r"[A-Za-z0-9._-]+/"
     ),
+    "absolute Windows home": re.compile(r"[A-Za-z]:[\\\\/]"+ "Users" + r"[\\\\/][A-Za-z0-9._-]+[\\\\/]"),
     "private key": re.compile(r"BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY"),
     "GitHub token": re.compile(r"(?:gh[opsu]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})"),
     "OpenAI token": re.compile(r"\bsk-(?:proj-)?[A-Za-z0-9_-]{20,}\b"),
