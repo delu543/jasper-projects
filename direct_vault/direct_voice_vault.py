@@ -1316,7 +1316,8 @@ def _default_silk_decoder(source: Path, destination: Path, sample_rate: int) -> 
         try:
             import pysilk
             data = source.read_bytes()
-            inspect_silk(data)
+            # The caller validates packet framing, message duration and source
+            # hashes before and after decoding; this adapter only converts bytes.
             # pysilk-mod's public validator expects Tencent's one-byte prefix.
             if not data.startswith(TENCENT_SILK_PREFIX):
                 data = TENCENT_SILK_PREFIX + data

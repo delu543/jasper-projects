@@ -6,7 +6,7 @@ from pathlib import Path
 import struct
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from Crypto.Cipher import AES
 from live_tools.windows.router import AccountRoutingError, Binding, bind_active_account
@@ -28,6 +28,19 @@ def encrypted_page(key=None, salt=None):
 
 
 class Contracts(unittest.TestCase):
+    def test_windows_decoder_adapter_uses_pysilk_bytes_contract(self):
+        import direct_vault.direct_voice_vault as voice
+        from direct_vault.tests.test_direct_voice_vault import make_silk
+        decoder = Mock()
+        decoder.decode.return_value = bytes(48000)
+        with tempfile.TemporaryDirectory() as temporary:
+            source, output = Path(temporary) / "input.silk", Path(temporary) / "output.pcm"
+            source.write_bytes(make_silk(1000, tencent_prefix=False))
+            with patch.object(voice, "WINDOWS", True), patch.dict("sys.modules", {"pysilk": decoder}):
+                voice._default_silk_decoder(source, output, 24000)
+            decoder.decode.assert_called_once_with(b"\x02" + source.read_bytes(), sample_rate=24000)
+            self.assertEqual(output.read_bytes(), bytes(48000))
+
     def test_first_page_authentication(self):
         page, key = encrypted_page()
         self.assertTrue(valid_page_key(page, key))

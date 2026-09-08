@@ -152,11 +152,12 @@ class NativeWindows(unittest.TestCase):
         from direct_vault.direct_voice_vault import _write_json_private
         fixture = FixtureVault(self.root / "vault")
         silk = pysilk.encode(bytes(24000 * 2), sample_rate=24000)
-        fixture.add_message(1, 101, 100, 1000)
+        # Modern timestamp avoids Windows CRT's pre-epoch local-time boundary.
+        fixture.add_message(1, 101, 1700000100, 1000)
         fixture.add_voice(101, 1000, blob=silk)
         account = self.root / "account"
         (account / "msg").mkdir(parents=True)
-        plan = build_content_plan(fixture.root, fixture.chat_name, "0", "600", kinds=["voice"])
+        plan = build_content_plan(fixture.root, fixture.chat_name, "1700000000", "1700000600", kinds=["voice"])
         plan_path = self.root / "plan.json"
         _write_json_private(plan_path, plan, None)
         for fast in (True, False):
