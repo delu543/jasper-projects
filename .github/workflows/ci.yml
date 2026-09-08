@@ -54,6 +54,8 @@ jobs:
           .\scripts\codex_bootstrap.ps1 install
           exit $LASTEXITCODE
       - name: Native Windows safety and media integration
+        # Fixture tests can diagnose native boundaries even if registration failed.
+        if: ${{ !cancelled() }}
         shell: powershell
         run: |
           $runtime = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'WeChatLocalExport\tools\python\Scripts\python.exe'

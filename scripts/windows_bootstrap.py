@@ -151,8 +151,18 @@ def main(argv=None):
             return subprocess.run([str(runtime), str(Path(__file__).resolve()), "register"], check=False).returncode
         print(json.dumps(register(support), ensure_ascii=False, indent=2))
         return 0
-    except Exception:
-        print(json.dumps({"status": "blocked", "detail": "Windows 安装未通过：检查 Python 3.12 x64、依赖、VC++ 运行库、私有目录权限及同名 Skill；未访问微信"}, ensure_ascii=False))
+    except Exception as error:
+        # Report code locations, never exception text, local paths or frame values.
+        locations = []
+        trace = error.__traceback__
+        while trace:
+            code = Path(trace.tb_frame.f_code.co_filename)
+            if code.is_relative_to(ROOT):
+                locations.append(f"{code.relative_to(ROOT).as_posix()}:{trace.tb_lineno}")
+            trace = trace.tb_next
+        print(json.dumps({"status": "blocked", "error_type": type(error).__name__,
+                          "code_locations": locations,
+                          "detail": "Windows 安装未通过：检查 Python 3.12 x64、依赖、VC++ 运行库、私有目录权限及同名 Skill；未访问微信"}, ensure_ascii=False))
         return 2
 
 
