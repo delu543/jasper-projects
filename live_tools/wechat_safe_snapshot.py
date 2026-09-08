@@ -114,7 +114,10 @@ class FileFingerprint:
             gid=value.st_gid,
             size=value.st_size,
             mtime_ns=value.st_mtime_ns,
-            ctime_ns=value.st_ctime_ns,
+            # CPython 3.12 Windows stat uses birthtime for deprecated ctime,
+            # while fstat exposes ChangeTime. Compare the same native field.
+            # File ID, size, mtime and the native SQLite locks remain mandatory.
+            ctime_ns=value.st_birthtime_ns if WINDOWS else value.st_ctime_ns,
         )
 
 

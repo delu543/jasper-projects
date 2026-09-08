@@ -1,5 +1,6 @@
 """Windows runner acceptance gates, explicitly not a live-WeChat test."""
 import ctypes
+from contextlib import closing
 import hashlib
 import json
 import os
@@ -90,6 +91,18 @@ class NativeWindows(unittest.TestCase):
         finally:
             connection.close()
 
+    def test_path_and_handle_fingerprints_match_after_write(self):
+        from live_tools.wechat_safe_snapshot import FileFingerprint
+        path = self.root / "fingerprint.db"
+        path.write_bytes(b"fixture")
+        before = FileFingerprint.from_stat(path.stat())
+        with path.open("ab") as handle:
+            handle.write(b"changed")
+        after = FileFingerprint.from_stat(path.stat())
+        self.assertNotEqual(before, after)
+        with path.open("rb") as handle:
+            self.assertEqual(after, FileFingerprint.from_stat(os.fstat(handle.fileno())))
+
     def test_snapshot_replays_latest_commit_without_mutating_sources(self):
         from live_tools.windows import snapshot, state
         from live_tools.windows.router import Binding
@@ -111,7 +124,7 @@ class NativeWindows(unittest.TestCase):
             destination = base / relative
             destination.write_bytes(encrypt_database(plain, key, salt))
             if relative.startswith("message/"):
-                with sqlite3.connect(plain) as conn:
+                with closing(sqlite3.connect(plain)) as conn, conn:
                     conn.execute(f"INSERT INTO {table} VALUES (1,2,1,100,'latest commit')")
             committed_wal(destination, encrypt_database(plain, key, salt))
             targets[relative] = {"salt": salt.hex(), "key": key.hex()}
@@ -126,7 +139,7 @@ class NativeWindows(unittest.TestCase):
             report = snapshot.create_snapshot(binding, payload)
             self.assertEqual(report["status"], "online-refresh-complete")
             profile = state.load_account_profile(ref)
-            with sqlite3.connect(Path(profile["vault_dir"]) / "message/message_0.db") as conn:
+            with closing(sqlite3.connect(Path(profile["vault_dir"]) / "message/message_0.db")) as conn:
                 self.assertEqual(conn.execute(f"SELECT message_content FROM {table}").fetchall(), [("latest commit",)])
         after = {str(p.relative_to(base)): hashlib.sha256(p.read_bytes()).digest() for p in base.rglob("*") if p.is_file()}
         self.assertEqual(before, after)
@@ -143,8 +156,7 @@ class NativeWindows(unittest.TestCase):
         fixture.add_voice(101, 1000, blob=silk)
         account = self.root / "account"
         (account / "msg").mkdir(parents=True)
-        plan = build_content_plan(fixture.root, fixture.chat_name, "1970-01-01 00:00:00+00:00",
-                                  "1970-01-01 00:10:00+00:00", kinds=["voice"])
+        plan = build_content_plan(fixture.root, fixture.chat_name, "0", "600", kinds=["voice"])
         plan_path = self.root / "plan.json"
         _write_json_private(plan_path, plan, None)
         for fast in (True, False):

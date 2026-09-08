@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 import hashlib
 import json
 import os
@@ -59,7 +59,7 @@ class FixtureVault:
         return "Msg_" + hashlib.md5(self.chat_id.encode()).hexdigest()
 
     def _create_contact(self) -> None:
-        with sqlite3.connect(self.contact) as connection:
+        with closing(sqlite3.connect(self.contact)) as connection, connection:
             connection.execute(
                 "CREATE TABLE contact (id INTEGER, username TEXT, nick_name TEXT, remark TEXT, alias TEXT)"
             )
@@ -69,7 +69,7 @@ class FixtureVault:
             )
 
     def _create_message(self) -> None:
-        with sqlite3.connect(self.message) as connection:
+        with closing(sqlite3.connect(self.message)) as connection, connection:
             connection.execute(
                 f"CREATE TABLE [{self.table}] ("
                 "local_id INTEGER, server_id INTEGER, local_type INTEGER, "
@@ -78,7 +78,7 @@ class FixtureVault:
             )
 
     def _create_media(self) -> None:
-        with sqlite3.connect(self.media) as connection:
+        with closing(sqlite3.connect(self.media)) as connection, connection:
             connection.execute(
                 "CREATE TABLE VoiceInfo (svr_id INTEGER, voice_data BLOB, "
                 "local_id INTEGER, create_time INTEGER, chat_name_id INTEGER)"
@@ -102,7 +102,7 @@ class FixtureVault:
         xml = f'<msg><voicemsg voicelength="{duration_ms}" /></msg>'
         content = "" if compressed_fallback else xml
         compressed = xml.encode("utf-8") if compressed_fallback else None
-        with sqlite3.connect(self.message) as connection:
+        with closing(sqlite3.connect(self.message)) as connection, connection:
             connection.execute(
                 f"INSERT INTO [{self.table}] VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (local_id, server_id, local_type, create_time, content, compressed, None),
@@ -119,7 +119,7 @@ class FixtureVault:
         chat_name_id: int = 7,
     ) -> None:
         target = database or self.media
-        with sqlite3.connect(target) as connection:
+        with closing(sqlite3.connect(target)) as connection, connection:
             connection.execute(
                 "INSERT INTO VoiceInfo VALUES (?, ?, ?, ?, ?)",
                 (
