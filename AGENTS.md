@@ -6,6 +6,11 @@ This repository is “微信数据提取项目”: existing macOS support plus W
 
 When the user asks to install, check, use, scan, summarize, or export WeChat data:
 
+For Windows first-use or onboarding help, read [Windows first-run guidance](docs/WINDOWS_FIRST_RUN.md)
+completely before choosing the next user action. It defines the copyable first prompt, staged
+Chinese replies, login timing and separate consent prompts. These examples are not actual consent.
+When the user asks to revise these docs or code, do not run WeChat setup or real-data checks.
+
 On native Windows, use `scripts/codex_bootstrap.ps1 doctor` first. If installation is needed,
 explain pinned public wheel downloads and then use `scripts/codex_bootstrap.ps1 install`.
 Missing CPython 3.12 x64 or VC++ runtime requires clear installation guidance and approval.
@@ -13,6 +18,24 @@ Do not run Mac scripts, Swift, Frida, WSL or change security policies to substit
 Read the selected Skill's `references/windows.md` completely before its platform actions.
 Windows native CI uses synthetic data, not a live WeChat account; keep this limitation visible.
 This route does not authorize key initialization, snapshot retention, or real-data testing.
+
+Keep the Windows first-run conversation short and state-based:
+
+- Installation can finish before WeChat login. Distinguish environment-ready from account-ready
+  and export-complete. Ask for login/open-any-chat only when account diagnosis requires it.
+- Run commands and resolve fixed private paths internally; do not make users copy terminal
+  commands, database paths, account IDs or digests. Explain ordinary dependency downloads and
+  reuse an existing matching installation authorization; extra Python/VC++ installation still
+  needs clear approval. Never ask for blanket permissions or weakened Windows security.
+- If the same current account is already ready for the requested types, skip setup. Otherwise
+  require the user's explicit setup invocation, then separate current-scope capture and retained
+  snapshot confirmations. Explain that internal snapshots can cover other chats in that account;
+  only final exports are filtered by the specified chat/time. Never default content types to all.
+- Retain the original export request and valid same-scope decisions across steps. Ask only for
+  missing inputs, resume that request after setup, and do not turn examples into authorization.
+- Do not ask Windows users to quit/relaunch WeChat, create a Mac app copy, grant Mac-only
+  permissions or restart Codex routinely. User-controlled login stays manual; restart Codex
+  only if newly installed Skills are not discovered. Keep all existing failure/strict-export gates.
 
 On macOS, preserve the existing flow:
 

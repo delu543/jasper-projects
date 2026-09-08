@@ -8,6 +8,20 @@ Scope: Windows 10/11 x64, official WeChat 4.x, CPython 3.12 x64, source preview.
 This is not a signed consumer Companion, and no live Windows WeChat acceptance is
 claimed merely because native fixture tests pass.
 
+For first-use guidance, read `docs/WINDOWS_FIRST_RUN.md` completely from the
+complete source kit or verified installed source release resolved through the
+sibling Windows reference. Use its Windows-specific disclosures and concise
+Chinese prompts, not the shared Skill's Mac temporary-copy/Frida/quit disclosures.
+The examples are not consent. Reuse already-provided content types and the
+original export request; never default to all or request this invocation again
+if it is already explicit in the current task. If ordinary doctor proves this
+account ready for those types, skip capture/retention and return to that request.
+Always separate environment installation, explicit setup entry, capture consent,
+retained-snapshot consent and actual export completion in user-facing status.
+Explain before retention that category-level snapshots may include other chats
+in the current account; chat/time filtering applies to final exports. Keep the
+two actual-scope confirmations separate even when the user wants fewer steps.
+
 ## 1. Read-only diagnosis
 
 Use the installed private Python runtime and source release determined by the

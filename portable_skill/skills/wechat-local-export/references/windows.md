@@ -5,6 +5,16 @@ shared Skill's exact-chat/time/type, dry-scan, confirmation, strict verification
 no-upload, no-key-handling and no-WeChat-UI rules. This reference replaces only
 Mac filesystem, runtime, Swift and APFS-specific steps.
 
+For first-use conversation, read `docs/WINDOWS_FIRST_RUN.md` completely from the
+complete source repository, or from the verified installed source release once
+its root is resolved below. That guide supplies concise Chinese next-action and
+consent wording; it is included in the full source install, not fetched remotely.
+Installation may precede WeChat login. Ask the user to log in and open any chat
+only when needed for account checks; already-ready accounts skip setup. Preserve
+the original chat/time/type request through onboarding and ask only for missing
+inputs. Guide examples are never user consent. Do not request screenshots, paths,
+routine restarts, blanket permission or Mac-specific setup actions on Windows.
+
 1. From the complete source repository, run `scripts/codex_bootstrap.ps1 doctor`.
    Installation is an explicit action: explain pinned PyPI wheel downloads before
    `install`. Missing CPython 3.12 x64 / VC++ runtime needs a separate clear remedy;

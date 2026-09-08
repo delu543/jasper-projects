@@ -2,6 +2,11 @@
 
 ## Windows 源码预览入口
 
+普通 Windows 用户无需照抄下方命令，先复制 [Windows 新手指南](../docs/WINDOWS_FIRST_RUN.md)
+中的第一段话给 Codex。本机安装不要求先登录微信；Codex 到账号检查时才提示本人登录并
+打开任意聊天，再分别引导显式 setup、初始化确认、私有快照保留确认和后续导出。
+已就绪账号不重复初始化，已安装依赖不重复询问；不默认全选类型，也不索取截图或数据库路径。
+
 Windows 10/11 x64 + 官方微信 4.x 用户应打开完整 GitHub 源码（不是下面的旧版 Plugin-only ZIP），
 使用 `scripts/codex_bootstrap.ps1 doctor` / `install`。Windows 安装器注册两个 Skill，
 使用 CPython 3.12 x64、DPAPI/ACL 和原生 FFmpeg，不运行 Swift 或 Frida。
