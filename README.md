@@ -1,5 +1,24 @@
 # 微信数据提取项目
 
+## 新增：视频号直播回放 → 完整 Word
+
+提供独立的 [wechat-replay-word Skill](portable_skill/skills/wechat-replay-word/SKILL.md)：
+从一条种子链接绑定账号，自动分页收集可访问回放，提取音轨、本地离线转写、按场生成带时间戳的完整 Word，
+并提供每5秒更新的只读本地进度面板。聊天导出能力保持原样，直播不需要聊天数据库初始化。
+
+新电脑的第一句话、依赖安装、一次播放绑定、临时接入审批、网络回滚和验收步骤，见
+[直播文字稿运行手册](portable_skill/skills/wechat-replay-word/references/workflow.md)。
+当前是 **Apple Silicon macOS 源码预览**；通用封装和新电脑完整链路仍需各自验收，
+不保证任意微信版本或所有电脑开箱即用。Windows 聊天导出预览不等于 Windows 直播支持。
+目录已收齐不等于全部 Word 已生成；不会将中间进度或部分成功包装成全量完成。
+
+```bash
+npx -y skills add delu543/wechat-data-extraction --skill wechat-replay-word
+```
+
+只读打开仓库不会执行代码；运行时下载、模型下载、临时证书/网络变更仍按具体请求与权限处理。
+没有 Cookie 上传或远程转写。Word 是最终成品，中间媒体不会未经确认自动删除。
+
 通过 Codex 对话，在本机按“聊天名称 + 时间范围 + 内容类型”导出本机微信 4.x 数据。Mac 保留现有能力，新增 Windows 10/11 x64 源码预览。
 支持文字、图片、语音、普通文件和部分可验证表情；语音可直接按顺序合并成 MP4。
 

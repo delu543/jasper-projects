@@ -5,6 +5,10 @@ description: Export authorized local macOS / Windows WeChat 4.x chat content by 
 
 # WeChat Local Export
 
+Video-channel livestream replays are not chat voice messages. If the user requests a creator's
+replay catalog or full replay Word transcripts, route to the bundled `wechat-replay-word` Skill
+before this chat doctor. Never use chat database setup or chat-export consent for that route.
+
 ## Platform routing
 
 On native Windows 10/11 x64, first read [the Windows route](references/windows.md)

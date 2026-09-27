@@ -25,6 +25,19 @@
 
 ## Change classification
 
+## Additive replay-to-Word module
+
+| Capability | Status | Boundary | Evidence |
+| --- | --- | --- | --- |
+| Creator replay pagination | source preview | Exact author/seed binding, native page API, terminal cursor, private local catalog; explicit narrow temporary interception | Original adapter real single-account 219 unique replays / 5 pages; distribution wrapper needs fresh-machine acceptance |
+| Audio-only batch and recovery | source preview | HTTPS allowlist, exact ranges, full decode, identity/hash, bounded prefetch, probe inside retry budget, shared-outage stop | Multiple real original audio validations; recovered failed replay complete at 3573.38s; synthetic outage and access-denial regressions |
+| Offline ASR and Word | source preview, Apple Silicon | Local MLX, all-block coverage, word-time overlap ownership, body round-trip, separate page-review gate | Original multi-replay Word outputs; not a claim of all219 delivered or human-verbatim accuracy |
+| Live local progress panel | active local prototype | Loopback/private route, GET-only, no queue control, safe aggregate/progress fields, per-file download verification | Live running queue plus status/paused/error/corruption tests and browser checks |
+| Windows replay capture/ASR | not implemented | Do not inherit chat Windows tests | Requires a separate native implementation and machine validation |
+
+Removed / Changed Existing Capabilities: none removed. Chat clients, key initialization and exports
+remain separate. Replay capture is not a silent fallback for chat export.
+
 The unified content archive and current-account online refresh are additive. The direct voice path,
 explicit frozen development vault, and existing supervised UI/audio fallback remain available; no
 prior export capability was removed. The historical-directory account choice UX is intentionally

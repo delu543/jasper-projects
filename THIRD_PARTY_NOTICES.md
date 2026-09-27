@@ -48,3 +48,23 @@ Native Windows code calls Microsoft APIs through pywin32/ctypes; it does not cop
 or bundle third-party credential extraction code. The public SQLite lock protocol,
 SQLCipher design and MSVC string ABI informed the implementation. See
 [review and validation boundaries](docs/WINDOWS_SUPPORT.md).
+
+## Optional video-channel replay Word preview
+
+The separate `wechat-replay-word` bootstrap downloads, but does not redistribute,
+mitmproxy 12.2.3 ([MIT](https://github.com/mitmproxy/mitmproxy/blob/main/LICENSE)),
+cryptography 48.0.1 ([Apache-2.0 or BSD-3-Clause](https://github.com/pyca/cryptography/blob/main/LICENSE)),
+mlx-whisper 0.4.3 ([MIT](https://github.com/ml-explore/mlx-examples/blob/main/LICENSE)),
+python-docx 1.2.0 ([MIT](https://github.com/python-openxml/python-docx/blob/master/LICENSE)),
+and imageio-ffmpeg 0.6.0 (wrapper and binary licensing described above).
+Their transitive dependencies retain their own licenses. This preview pins direct
+versions, not a complete transitive hash lock; it must not be advertised as a
+reproducible binary release. No certificates, private keys, account catalogs,
+session parameters, media, runtime environments or model weights are bundled.
+
+The interception adapter and bounded replay queue are project-authored code using
+mitmproxy's public addon interface. They do not incorporate an unreviewed third-party
+downloader executable. Model download is a separate explicit step: record its exact
+revision, license and file hashes, and never execute custom model-repository code.
+Temporary certificate trust is a security-sensitive, separately approved action;
+installing the Skill never changes trust or network settings.

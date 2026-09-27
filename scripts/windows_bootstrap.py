@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE_PARTS = ("content_vault", "direct_vault", "live_tools", "portable_skill", "scripts",
                 "Package.swift", "README.md", "AGENTS.md", "PRIVACY.md", "SECURITY.md", "docs")
 EXCLUDE = {".git", ".codex", ".build", "__pycache__", "work", "outputs", "tasks", ".venv"}
-SKILLS = ("wechat-local-export", "wechat-local-export-setup")
+SKILLS = ("wechat-local-export", "wechat-local-export-setup", "wechat-replay-word")
 MANAGED = "wechat-local-export-windows-v1"
 
 

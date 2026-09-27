@@ -42,6 +42,7 @@ INSTALL_STATE="$APP_ROOT/install.json"
 SKILLS_ROOT="$HOME/.agents/skills"
 EXPORT_LINK="$SKILLS_ROOT/wechat-local-export"
 SETUP_LINK="$SKILLS_ROOT/wechat-local-export-setup"
+REPLAY_LINK="$SKILLS_ROOT/wechat-replay-word"
 VERSION=$(/usr/bin/python3 -c \
   'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["version"])' \
   "$SOURCE_ROOT/portable_skill/.codex-plugin/plugin.json")
@@ -98,6 +99,7 @@ fi
 RELEASE_ROOT="$RELEASES_ROOT/$RELEASE_ID"
 INSTALLED_EXPORT_SOURCE="$CURRENT_LINK/portable_skill/skills/wechat-local-export"
 INSTALLED_SETUP_SOURCE="$CURRENT_LINK/portable_skill/skills/wechat-local-export-setup"
+INSTALLED_REPLAY_SOURCE="$CURRENT_LINK/portable_skill/skills/wechat-replay-word"
 INSTALLED_SWIFT_BINARY="$CURRENT_LINK/.build/release/wechat-voice-mp4"
 RELEASE_STAGE=""
 
@@ -163,7 +165,8 @@ link_points_to() {
 
 skills_ready() {
   link_points_to "$EXPORT_LINK" "$INSTALLED_EXPORT_SOURCE" &&
-    link_points_to "$SETUP_LINK" "$INSTALLED_SETUP_SOURCE"
+    link_points_to "$SETUP_LINK" "$INSTALLED_SETUP_SOURCE" &&
+    link_points_to "$REPLAY_LINK" "$INSTALLED_REPLAY_SOURCE"
 }
 
 swift_ready() {
@@ -336,6 +339,7 @@ install_project() {
   switch_current_release
   install_skill_link "$INSTALLED_EXPORT_SOURCE" "$EXPORT_LINK"
   install_skill_link "$INSTALLED_SETUP_SOURCE" "$SETUP_LINK"
+  install_skill_link "$INSTALLED_REPLAY_SOURCE" "$REPLAY_LINK"
   write_install_state
 
   if $SKIP_DEPENDENCIES || $SKIP_BUILD; then
@@ -360,6 +364,7 @@ remove_owned_link() {
 uninstall_project() {
   remove_owned_link "$EXPORT_LINK" "$INSTALLED_EXPORT_SOURCE"
   remove_owned_link "$SETUP_LINK" "$INSTALLED_SETUP_SOURCE"
+  remove_owned_link "$REPLAY_LINK" "$INSTALLED_REPLAY_SOURCE"
   if [[ -L "$CURRENT_LINK" ]]; then
     current_target=$(/usr/bin/readlink "$CURRENT_LINK")
     case "$current_target" in

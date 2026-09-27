@@ -15,6 +15,7 @@ PLUGIN_MANIFEST = ROOT / ".codex-plugin" / "plugin.json"
 MARKETPLACE = ROOT / ".agents" / "plugins" / "marketplace.json"
 EXPORT_SKILL = ROOT / "skills" / "wechat-local-export"
 SETUP_SKILL = ROOT / "skills" / "wechat-local-export-setup"
+REPLAY_SKILL = ROOT / "skills" / "wechat-replay-word"
 CLIENT = EXPORT_SKILL / "scripts" / "wechat_local_export_client.py"
 DEV_BACKEND = ROOT / "scripts" / "dev_backend.py"
 PRIVACY = ROOT / "PRIVACY.md"
@@ -161,6 +162,17 @@ def validate() -> dict[str, Any]:
     if setup_implicit:
         raise ValidationError("setup skill must disable implicit invocation")
 
+    replay_meta = _frontmatter(REPLAY_SKILL / "SKILL.md")
+    if replay_meta.get("name") != "wechat-replay-word" or not replay_meta.get("description"):
+        raise ValidationError("replay skill metadata mismatch")
+    if not _yaml_policy(REPLAY_SKILL / "agents" / "openai.yaml"):
+        raise ValidationError("replay skill must allow implicit routing, not implicit interception")
+    for relative in ("references/workflow.md", "scripts/bootstrap.py", "scripts/capture_session.py",
+                     "scripts/run_account_batch.py", "scripts/recovery_audio.py",
+                     "scripts/dashboard/server.py", "scripts/dashboard/index.html"):
+        if not (REPLAY_SKILL / relative).is_file():
+            raise ValidationError("missing replay resource: " + relative)
+
     setup_text = (SETUP_SKILL / "SKILL.md").read_text(encoding="utf-8")
     for phrase in (
         "explicit-only",
@@ -182,7 +194,7 @@ def validate() -> dict[str, Any]:
         "status": "ok",
         "plugin": manifest["name"],
         "version": manifest["version"],
-        "skills": [export_meta["name"], setup_meta["name"]],
+        "skills": [export_meta["name"], setup_meta["name"], replay_meta["name"]],
         "export_implicit": export_implicit,
         "setup_implicit": setup_implicit,
         "client_commands": [

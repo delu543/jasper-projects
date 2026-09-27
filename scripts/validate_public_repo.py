@@ -59,6 +59,9 @@ FORBIDDEN_SUFFIXES = {
 }
 TEXT_SUFFIXES = {
     "",
+    ".js",
+    ".cjs",
+    ".html",
     ".json",
     ".md",
     ".py",

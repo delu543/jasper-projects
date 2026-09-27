@@ -2,6 +2,16 @@
 
 This repository is “微信数据提取项目”: existing macOS support plus Windows 10/11 x64 + WeChat 4.x source preview.
 
+## Replay transcription routing
+
+For video-channel live replays, whole-creator replay catalogs, complete Word transcripts or
+their progress dashboard, first read `portable_skill/skills/wechat-replay-word/SKILL.md`.
+That additive route does not use chat databases or chat initialization. Its scoped, explicitly
+approved temporary catalog interception is separate from all chat-export code below.
+Do not install chat dependencies, run chat doctor or request database-key setup for replay tasks.
+Live catalog capture and MLX transcription currently have Apple Silicon macOS evidence only;
+do not imply Windows replay support from the Windows chat-export preview.
+
 ## First relevant request
 
 When the user asks to install, check, use, scan, summarize, or export WeChat data:
