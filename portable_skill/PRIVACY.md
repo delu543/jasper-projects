@@ -1,5 +1,19 @@
 # Privacy boundary
 
+## Separate optional replay-to-Word route
+
+The chat-export statements below describe the existing local chat workflow. The optional
+`wechat-replay-word` Skill instead reads authorized online replay catalogs and media from
+Tencent endpoints. After explicit scoped approval it temporarily proxies the chosen network
+service, decrypts only two approved page/static hosts, and retains only the required catalog
+fields in owner-only local task files. Signed media URLs and account identifiers are private;
+never publish them or paste them into the AI conversation. Audio, transcription and Word
+remain local; there is no cloud-ASR upload. The progress panel is loopback-only and read-only.
+Dependency/model downloads are separate from content acquisition. Installation does not
+change network settings or certificate trust. See the [replay lifecycle](skills/wechat-replay-word/references/workflow.md).
+
+## Existing chat-export route
+
 WeChat Local Export is designed for authorized data already present on the user's Mac.
 
 - Normal operation is offline. The Plugin declares no remote MCP server, telemetry service, account

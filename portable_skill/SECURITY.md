@@ -1,5 +1,22 @@
 # Security model
 
+## Optional replay capture is a separate permission boundary
+
+The replay Skill is an Apple Silicon macOS source preview, not an expansion of the chat
+helper's command allowlist. Its temporary per-task user CA and HTTP/HTTPS proxy require
+explicit approval of target, two hostnames, network service, duration and rollback. CA
+NameConstraints are defense in depth, not proof of a macOS trust sandbox. Other hosts pass
+through; upstream TLS verification remains enabled. No browser Cookie files, WeChat binary
+modifications or chat sending are involved. A network watchdog complements normal cleanup;
+SIGKILL/power loss requires explicit restoration and exact-CA revocation on resumption.
+Rollback conflicts never authorize overwriting newer user network settings.
+
+Replay queues stop on shared network failure or access/rate-limit responses, preserve failed
+evidence, bind identity and hashes, verify full audio and independent source duration when
+catalog duration differs. Word body checks and visual review are separate completion gates.
+The packaged lifecycle wrapper still needs clean-machine real acceptance; original prototype
+success, synthetic tests and an install check do not prove every computer or full batch works.
+
 ## Current status
 
 This is a source-development Plugin package. It does not include a Developer ID-signed or notarized
