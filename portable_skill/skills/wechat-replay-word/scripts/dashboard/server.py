@@ -5,12 +5,14 @@ import json
 import os
 from pathlib import Path
 import secrets
+import threading
 from urllib.parse import quote, urlsplit
 from state import BatchView
 
 
 def serve(root, port, connection_file):
     view = BatchView(root)
+    view_lock = threading.Lock()
     token = secrets.token_urlsafe(24)
     prefix = '/' + token
     page = Path(__file__).with_name('index.html').read_text().replace('NONCE_VALUE', token).encode()
@@ -46,7 +48,8 @@ def serve(root, port, connection_file):
                 return self.reply(200, page, 'text/html; charset=utf-8')
             if route == prefix + '/api/status':
                 try:
-                    result = json.dumps(view.snapshot(), ensure_ascii=False).encode()
+                    with view_lock:
+                        result = json.dumps(view.snapshot(), ensure_ascii=False).encode()
                     return self.reply(200, result, 'application/json; charset=utf-8')
                 except Exception:
                     return self.reply(503, b'{"error":"status_unavailable"}', 'application/json')
@@ -54,8 +57,10 @@ def serve(root, port, connection_file):
                 ident = route.removeprefix(prefix + '/word/')
                 if ident.isascii() and ident.isdigit() and len(ident) <= 5:
                     try:
-                        path = view.download(int(ident))
-                        return self.reply(200, path.read_bytes(),
+                        with view_lock:
+                            path = view.download(int(ident))
+                            body = path.read_bytes()
+                        return self.reply(200, body,
                                           'application/vnd.openxmlformats-officedocument.wordprocessingml.document', path.name)
                     except (OSError, ValueError):
                         pass
