@@ -104,7 +104,10 @@ def build(manifest_path, out):
     field = OxmlElement('w:fldSimple'); field.set(qn('w:instr'), 'PAGE'); footer._p.append(field)
     expected = []
     for index, (e, t, _) in enumerate(records):
-        if index:
+        # Large account-wide books can acquire blank pages when a forced break
+        # follows a naturally full page. Keep the legacy break unless the
+        # account assembler explicitly requests continuous sections.
+        if index and not manifest.get('continuous_sections'):
             d.add_page_break()
         title = re.sub(r'[^\w\s\u3400-\u9fff]', '', e['title'])
         d.add_paragraph(title, 'Heading 1')

@@ -31,7 +31,7 @@
 | --- | --- | --- | --- |
 | Creator replay pagination | source preview | Exact author/seed binding, native page API, terminal cursor, private local catalog; explicit narrow temporary interception | Original adapter real single-account 219 unique replays / 5 pages; distribution wrapper needs fresh-machine acceptance |
 | Audio-only batch and recovery | source preview | HTTPS allowlist, exact ranges, full decode, identity/hash, bounded prefetch, probe inside retry budget, shared-outage stop | Multiple real original audio validations; recovered failed replay complete at 3573.38s; synthetic outage and access-denial regressions |
-| Offline ASR and Word | source preview, Apple Silicon | Local MLX, all-block coverage, word-time overlap ownership, body round-trip, separate page-review gate | Original multi-replay Word outputs; not a claim of all219 delivered or human-verbatim accuracy |
+| Offline ASR and Word | source preview, Apple Silicon | Local MLX, timestamp-preserving PCM decode with schema-isolated checkpoints, all-block coverage, word-time overlap ownership, source Word body/hash/render review, one ordered account Word and separate final render gate | One local account completed 219 replay/source-Word checks and one 3069-page final Word; no human-verbatim or fresh-machine claim |
 | Live local progress panel | active local prototype | Loopback/private route, GET-only, no queue control, safe aggregate/progress fields, per-file download verification | Live running queue plus status/paused/error/corruption tests and browser checks |
 | Windows replay capture/ASR | not implemented | Do not inherit chat Windows tests | Requires a separate native implementation and machine validation |
 

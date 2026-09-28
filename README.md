@@ -3,14 +3,20 @@
 ## 新增：视频号直播回放 → 完整 Word
 
 提供独立的 [wechat-replay-word Skill](portable_skill/skills/wechat-replay-word/SKILL.md)：
-从一条种子链接绑定账号，自动分页收集可访问回放，提取音轨、本地离线转写、按场生成带时间戳的完整 Word，
-并提供每5秒更新的只读本地进度面板。聊天导出能力保持原样，直播不需要聊天数据库初始化。
+从一条种子链接绑定账号，自动分页收集可访问回放，提取音轨、本地离线转写、先逐场
+生成带时间戳的 Word 并验收，最后合成**一份完整 Word**；提供只读本地进度面板。
+聊天导出能力保持原样，直播不需要聊天数据库初始化。
 
 新电脑的第一句话、依赖安装、一次播放绑定、临时接入审批、网络回滚和验收步骤，见
 [直播文字稿运行手册](portable_skill/skills/wechat-replay-word/references/workflow.md)。
 当前是 **Apple Silicon macOS 源码预览**；通用封装和新电脑完整链路仍需各自验收，
 不保证任意微信版本或所有电脑开箱即用。Windows 聊天导出预览不等于 Windows 直播支持。
-目录已收齐不等于全部 Word 已生成；不会将中间进度或部分成功包装成全量完成。
+目录已收齐不等于全部 Word 已生成。只有音轨、转写、逐场正文与排版、最终合并 Word
+分别对账后才交全量成品；不会将中间进度或部分成功包装成全量完成。
+
+本机真实批次已验证单账号 219 场的逐场对账和单文件 Word 渲染；这不是新电脑、所有账号、
+Windows 直播或人工逐字校听的验证。时间轴空档、来源时长误差、断网、面板误报、渲染缺字等
+已知卡点的分类与恢复边界见[故障诊断与验收](portable_skill/skills/wechat-replay-word/references/recovery-and-acceptance.md)。
 
 ```bash
 npx -y skills add delu543/wechat-data-extraction --skill wechat-replay-word

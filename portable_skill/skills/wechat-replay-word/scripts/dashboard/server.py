@@ -1,6 +1,6 @@
 """Private loopback dashboard. GET-only; no queue mutation or arbitrary files."""
 import argparse
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 from pathlib import Path
@@ -16,6 +16,10 @@ def serve(root, port, connection_file):
     page = Path(__file__).with_name('index.html').read_text().replace('NONCE_VALUE', token).encode()
 
     class Handler(BaseHTTPRequestHandler):
+        def setup(self):
+            self.request.settimeout(10)
+            super().setup()
+
         def log_message(self, *args):
             pass
 
@@ -57,7 +61,7 @@ def serve(root, port, connection_file):
                         pass
             return self.reply(404, b'Not found', 'text/plain')
 
-    server = HTTPServer(('127.0.0.1', port), Handler)
+    server = ThreadingHTTPServer(('127.0.0.1', port), Handler)
     result = {'url': f'http://127.0.0.1:{server.server_port}{prefix}/', 'pid': os.getpid(), 'read_only': True}
     if connection_file:
         with open(connection_file, 'x') as f:
