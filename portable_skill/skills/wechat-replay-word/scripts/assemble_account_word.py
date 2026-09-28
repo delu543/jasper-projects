@@ -7,7 +7,9 @@ import argparse
 import json
 from pathlib import Path
 
-from build_word import build
+from build_word import build, clock, groups, validate_transcript
+from docx import Document
+from run_account_batch import make_plan
 from transcribe_local import digest, save
 
 
@@ -29,6 +31,8 @@ def source_manifest(config):
     if (not entries or len(entries) != len(directory.get('items', []))
             or len({(e['account_id'], e['replay_id']) for e in entries}) != len(entries)):
         raise ValueError('missing_or_duplicate_replay_identity')
+    if entries != make_plan(directory, config):
+        raise ValueError('frozen_plan_entries_changed')
     if len(statuses) != len(entries):
         raise ValueError('account_results_incomplete')
     ready = []
@@ -45,6 +49,17 @@ def source_manifest(config):
         transcript = Path(item['transcript'])
         if not transcript.is_file():
             raise ValueError(f'source_transcript_missing:{ordinal:04d}')
+        data = json.loads(transcript.read_text())
+        validate_transcript(data)
+        if data.get('identity') != {'account': entry['account_id'], 'replay': entry['replay_id']}:
+            raise ValueError(f'source_transcript_identity_mismatch:{ordinal:04d}')
+        expected = [f"[{clock(chunk[0]['start'])}–{clock(chunk[-1]['end'])}] " +
+                    ''.join(segment['text'] for segment in chunk)
+                    for chunk in groups(data['segments'])]
+        actual = [paragraph.text for paragraph in Document(word).paragraphs
+                  if paragraph.style.name == 'TranscriptBody']
+        if actual != expected or proof.get('paragraph_count') != len(expected):
+            raise ValueError(f'source_word_transcript_mismatch:{ordinal:04d}')
         ready.append(dict(entry, transcript=str(transcript)))
     return {'account_name': config['account_name'], 'catalog_complete': True,
             'continuous_sections': True, 'replays': ready}
