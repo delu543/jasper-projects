@@ -1,0 +1,5 @@
+.project-observatory/
+node_modules/
+.DS_Store
+playwright-report/
+output/

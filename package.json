@@ -1,0 +1,13 @@
+{
+  "name": "project-observatory",
+  "version": "0.1.0",
+  "private": false,
+  "description": "A local-first, live development dashboard for any project",
+  "type": "module",
+  "bin": { "project-observatory": "./bin/project-observatory.mjs" },
+  "scripts": { "test": "node --test", "start": "node bin/project-observatory.mjs serve --project ." },
+  "engines": { "node": ">=20" },
+  "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/delu543/project-observatory.git" },
+  "files": ["bin", "lib", "public", "README.md", "LICENSE"]
+}
