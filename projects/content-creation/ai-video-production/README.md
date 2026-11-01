@@ -1,0 +1,77 @@
+# AI 视频制作
+
+**从一句视频需求，推进到可以播放的成片。**
+
+这是一套面向 Codex 的真实素材视频制作 Skill 与工程工具。适用于历史、科技科普、纪录短片、品牌和产品宣传：用事实与具体影像讲清内容，用自然人声、合理的音乐与镜头衔接形成完整观看体验。
+
+**当前版本：0.2.0。** 已沉淀制作规范，并提供可运行的本地工程、字幕、混音、剪辑和验收工具。研究、素材语义判断与艺术决策由 Agent 执行；需要可用的网页能力、经授权的配音服务及真实素材。它不会仅凭一个 CLI 自动替你完成事实研究，也不承诺主观“完美”。
+
+## 快速使用
+
+在已有安装的 Codex 窗口中：
+
+```text
+$ai-video-production 做一个关于航空发展史的视频，约 6 分钟，面向年轻人，
+用英文旁白、中文在上英文在下的字幕，交付完整视频。
+```
+
+题材、长度、语言都可换。没有指定的部分，Agent 根据简报与已有偏好作合理选择；新费用、资料外传和发布必须在有效授权内。若只要试音或设计阶段，直接写明。
+
+在另一台 macOS/Linux 上安装：
+
+```bash
+git clone https://github.com/delu543/ai-video-production.git
+cd ai-video-production
+python3 scripts/install_skill.py            # Claude Code 用 --target claude
+python3 skills/ai-video-production/scripts/video.py doctor
+```
+
+公开仓库可直接克隆。Python ≥3.9；渲染需 FFmpeg/FFprobe 及 libass，字幕需适用的中英文字体。安装工具不安装依赖、不删除现有 Skill；安装后在支持的客户端刷新 Skill 列表/开始下一轮调用。详见 [上手指南](docs/getting-started.md)。
+
+## 制作标准
+
+[通用质量标准](skills/ai-video-production/references/quality-bar.md) 把专业拍摄质感、真实性、语义匹配和使用权分开检查。真实不等于随手拍，高清标签不等于好镜头；优质照片可替代不合格视频，稀缺的专业历史记录按证据价值保留必要例外。默认不生成动态画面或配乐，AI配音可用。用户允许且真实材料无法完成数据/机制说明时，可按 [辅助说明图规则](skills/ai-video-production/references/explanatory-visuals.md) 生成有文字、数字或明确关系的高质量说明图；生活画面保持实拍。
+
+| 维度 | 具体要求 | 细则 |
+|---|---|---|
+| 文案 | 具体年份、人物、机制、变化；事实与观点分开；技术说明与人文思考同时成立 | [文案规范](skills/ai-video-production/references/editorial.md) |
+| 素材 | 专业影像优先，拍摄/风格/有效细节分别通过；逐句匹配，跨官方/档案/摄影库检索，低重复 | [素材质量](skills/ai-video-production/references/sourcing.md)、[检索入口](skills/ai-video-production/references/source-catalog.md) |
+| 画面 | 全幅构图，无上下黑条、叠字、廉价效果；档案/照片保内容融入 | [画面与转场](skills/ai-video-production/references/picture.md) |
+| 镜头 | 每个镜头说明作用，每个边界说明前后关系；切换方式服从逻辑 | [镜头与转场](skills/ai-video-production/references/picture.md) |
+| 人声 | 自然青年讲解，清楚稳健；试音定方向，专名校对，原声有语境 | [配音与原声](skills/ai-video-production/references/voice.md) |
+| BGM | 寻找相近授权作品；自然音色与叙事统一，数字/法律可整段留白；保留有依据的声音细节，宁小勿大 | [音乐与混音](skills/ai-video-production/references/music.md) |
+| 字幕 | 最终音轨对齐，中上英下可配置；换行/空间/字形实际检查 | [字幕规范](skills/ai-video-production/references/captions.md) |
+| 成本/交付 | 先记账再调用，未知结果不重付；可播放成片、工程、来源与验收分开 | [服务与费用](skills/ai-video-production/references/cost-and-providers.md)、[交付门](skills/ai-video-production/references/delivery.md) |
+
+参考视频只用于学习问题推进、节奏和表现原则。不要抄画面设计、台词或镜头序列。不同项目使用自己的故事和视觉语言。
+
+用户可提供完整脚本及画面/名曲参考。先保留主线、核查事实与时长，再提取画面和音乐意图，用真实素材与适用配乐实现。固定配色、背影限制、每镜秒数、语言、预算都属于当前简报；不套给其他题材。最终检查压缩后的播放文件，保留实际视听审阅与未审阅项。
+
+## 仓库导航
+
+```text
+skills/ai-video-production/    # 可独立安装的 Skill；制作规则的唯一真源
+  SKILL.md                    # Agent 入口与阶段门
+  agents/openai.yaml          # 调用与显示信息
+  references/                 # 按文案、素材、画面、声音、交付分类的规范
+  assets/                     # 通用简报与主时间线格式示例，不含第三方素材
+  scripts/                    # Python 标准库 + FFmpeg 工程工具
+docs/                         # 人用的上手、工程契约、验证与迭代说明
+scripts/                      # 安装、仓库审计与测试入口
+tests/                        # 单元与真实编码集成测试；只生成合成测试夹具
+.github/workflows/            # 无收费、无私人数据的 CI
+```
+
+- [端到端流程](skills/ai-video-production/references/workflow.md)
+- [工程数据契约与命令](docs/project-contract.md)
+- [架构与来源边界](docs/architecture.md)
+- [验证范围与案例](docs/validation.md)
+- [迭代计划](docs/roadmap.md) / [变更记录](CHANGELOG.md) / [贡献方式](CONTRIBUTING.md)
+
+## 边界
+
+实拍题材默认真实影像、照片和已创作的授权配乐；抽象题材（加密货币、协议、软件、金融机制）以按真实数据用代码绘制的图形为主。不调用生成视频或AI音乐，可自编配乐；旁白允许AI，内置 MiniMax 配音命令并受费用账本约束。图片生成仅用于用户允许、真实材料无法完成的具体说明，不用无文字概念照片替代实拍，不将说明图当作真实证据。配音/音乐供应商不固定，价格与许可使用前核查。默认本地交付，不自动发布。第三方媒体与秘密留在仓库外，免费访问不等于免费再利用。
+
+本仓库公开开源：代码、文档与 Skill 使用 **[MIT](LICENSE)**；仓库自有的两份示例 JSON 使用 **[CC0-1.0](DATA_LICENSE.md)**，适用路径列在 [licensing.json](licensing.json)。MIT 的版权与许可声明需随复制/分发保留。
+
+实际影片、用户项目数据、第三方视频/照片/音乐、字体、工具和服务不由本仓库重新授权。见 [数据许可与处理边界](DATA_LICENSE.md)、[第三方声明](THIRD_PARTY_NOTICES.md) 和 [安全边界](SECURITY.md)。安装包携带许可全文与数据范围说明。
