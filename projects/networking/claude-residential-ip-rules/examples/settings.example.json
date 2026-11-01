@@ -1,0 +1,44 @@
+{
+  "residential": {
+    "name": null,
+    "server": null,
+    "port": null,
+    "type": null
+  },
+  "expectedIp": null,
+  "country": null,
+  "port": null,
+  "usPattern": "(?i)(美国|美國|United States|\\bUS\\b|🇺🇸)",
+  "ordinaryProvider": {
+    "type": "http",
+    "url": null,
+    "path": "./proxy_providers/ordinary-only.yaml",
+    "interval": 3600,
+    "proxy": "DIRECT",
+    "health-check": {
+      "enable": true,
+      "url": "https://www.gstatic.com/generate_204",
+      "interval": 180
+    },
+    "override": {
+      "additional-prefix": "普通 | "
+    }
+  },
+  "proxyServerNameservers": [
+    "223.5.5.5",
+    "119.29.29.29"
+  ],
+  "claudePaths": [],
+  "codexPaths": [],
+  "apiSocket": null,
+  "chatgptResidential": false,
+  "_template": true,
+  "directCountries": [
+    "CN"
+  ],
+  "directGeosites": [
+    "cn"
+  ],
+  "directDomains": [],
+  "windowsDnsProtection": false
+}
