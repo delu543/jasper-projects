@@ -1,3 +1,5 @@
+> Latest integration checks: [2026-11-02](INTEGRATION_VALIDATION.md). Historical validation follows.
+
 # 验证记录
 
 本轮验证于 2026-09-27～28 在 Apple Silicon macOS 完成。模拟测试、夹具、日志和生成媒体仅留维护者本机，不随公开代码分发。

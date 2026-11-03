@@ -26,4 +26,4 @@
 - 直播目录 + MLX 和课程 MLX 仅 Apple Silicon 开发预览。
 - 分别报告环境、目录、下载、完整解码、转写、Word 正文、渲染/视觉检查；一个阶段成功不代表下游完成。
 - 发布前运行 `python3 scripts/public_check.py`，检查源码清单、代码语法、Skills 和隐私；本机回归记录见 `docs/VALIDATION.md`。新增测试不得暂存。
-- 修改能力时更新能力矩阵与来源记录。不得以入口聚合替代核心链路验证。
+- 修改能力时更新能力矩阵与来源记录。不得以入口聚合替代核心链路验证。当前使用 `capabilities` / `plan <任务>` 取得任务路线；公众号先核对保留缓存与回执，未知覆盖不得当成完整历史。Codex 与 Claude 共用本约定和 `skills/COMMON.md`。

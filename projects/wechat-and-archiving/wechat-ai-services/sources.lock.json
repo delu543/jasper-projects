@@ -19,11 +19,13 @@
     },
     {
       "component": "articles",
-      "repository": "https://github.com/delu543/wechat-public-account-archiver",
-      "commit": "b2d0fc39fb52a93f482da5f6fcebee55e6c09dc9",
-      "tests": "maintainer-local only",
+      "repository": "https://github.com/delu543/jasper-projects",
+      "commit": "0bd40506d1eee0f167638c2006b3efe8d7a2ee36",
+      "tests": "local upstream suite plus unified-router regression",
       "adapted": true,
-      "upstream_file_count": 51
+      "upstream_file_count": 77,
+      "historical_ref": "history/wechat-public-account-archiver/main",
+      "scope": "One canonical article engine; retained-cache increments, body/coverage reconciliation, verified session recovery and shared restriction stops"
     },
     {
       "component": "replay",
@@ -41,6 +43,7 @@
     "runtime routing and FFmpeg resolution",
     "independent namespaced Skills",
     "replay assembler retains suite frozen_plan_changed error identifier; integrity algorithm matches upstream",
-    "replay-only renderer diagnosis and assemble route; existing course title and handout retained"
+    "replay-only renderer diagnosis and assemble route; existing course title and handout retained",
+    "2026-11-02: unified article engine updated to final standalone baseline; suite identity, isolated config, cleanup preview and explicit setup contracts retained"
   ]
 }

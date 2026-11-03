@@ -4,6 +4,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
+from zoneinfo import ZoneInfo
 
 from docx import Document
 from docx.enum.section import WD_ORIENT
@@ -13,7 +14,7 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
-from .text_cleanup import clean_wechat_embedded_text
+from .text_cleanup import clean_wechat_embedded_text, readable_text_from_content_html
 
 
 NOISE_LINES = {
@@ -224,6 +225,11 @@ class IncrementalWordExporter:
         content_text = clean_wechat_embedded_text(
             str(self._value(article, "content_text") or "")
         )
+        content_html = str(self._value(article, "content_html") or "")
+        if content_html:
+            readable_text = readable_text_from_content_html(content_html)
+            if readable_text and self._same_text(readable_text, content_text):
+                content_text = readable_text
         if self._is_title_only(content_text, title) and len(summary) >= max(
             40, len(content_text) * 2
         ):
@@ -345,6 +351,9 @@ class IncrementalWordExporter:
     @staticmethod
     def _article_year(article: Mapping[str, Any]) -> str:
         value = str(IncrementalWordExporter._value(article, "publish_time") or "")
+        parsed = IncrementalWordExporter._publication_datetime(value)
+        if parsed is not None:
+            return str(parsed.year)
         match = re.match(r"(\d{4})-", value)
         return match.group(1) if match else "未注明日期"
 
@@ -359,11 +368,18 @@ class IncrementalWordExporter:
     @staticmethod
     def _publish_label(value: Any) -> str:
         raw = str(value or "")
-        try:
-            parsed = datetime.fromisoformat(raw)
-        except ValueError:
+        parsed = IncrementalWordExporter._publication_datetime(raw)
+        if parsed is None:
             return raw or "未注明日期"
         return f"{parsed.year}年{parsed.month}月{parsed.day}日 {parsed:%H:%M}"
+
+    @staticmethod
+    def _publication_datetime(value: str) -> datetime | None:
+        try:
+            parsed = datetime.fromisoformat(value)
+        except ValueError:
+            return None
+        return parsed.astimezone(ZoneInfo("Asia/Shanghai")) if parsed.tzinfo else parsed
 
     @staticmethod
     def _article_period_label(
@@ -373,9 +389,13 @@ class IncrementalWordExporter:
         dates: list[str] = []
         for article in articles:
             value = str(IncrementalWordExporter._value(article, "publish_time") or "")
-            match = re.match(r"(\d{4}-\d{2}-\d{2})", value)
-            if match:
-                dates.append(match.group(1))
+            parsed = IncrementalWordExporter._publication_datetime(value)
+            if parsed is not None:
+                dates.append(parsed.date().isoformat())
+            else:
+                match = re.match(r"(\d{4}-\d{2}-\d{2})", value)
+                if match:
+                    dates.append(match.group(1))
         if not dates:
             return fallback
         start = min(dates)

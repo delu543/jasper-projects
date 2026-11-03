@@ -2,7 +2,7 @@
 
 [返回项目分类](../README.md)
 
-源码总目录便于浏览；安装时推荐以下单项目克隆方式。每条命令都从本总仓库获取一个完整的原项目，保留它需要的独立 Git 根目录。
+当前功能使用下方指定入口。微信 AI 服务和项目开发观测台从 main 获取融合后的实现；其余未改项目保留独立历史快照克隆方式。
 
 这些 history 分支保存迁移时的公开版本，不是自动更新通道。原 README 中的旧仓库 clone、npx、skills add 或远程下载地址不再作为统一入口，请使用本页命令和[下载中心](downloads.md)。克隆后继续阅读本地文档中的功能、授权及平台说明。
 
@@ -44,52 +44,17 @@ cd digital-human-workflow
 <a id="wechat-ai-services"></a>
 ## 微信 AI 服务
 
-统一调用聊天导出、公众号归档、直播与课程转 Word、媒体转 MP3；开发预览。
+原微信数据提取和公众号归档已融合至此。当前功能从 main 获取，不使用旧项目的历史分支安装。
 
 ```sh
-git clone --single-branch --branch history/wechat-ai-services/main https://github.com/delu543/jasper-projects.git wechat-ai-services
-cd wechat-ai-services
+git clone --single-branch --branch main https://github.com/delu543/jasper-projects.git
+cd jasper-projects/projects/wechat-and-archiving/wechat-ai-services
+python3 wechat_ai.py plan articles-update
 ```
 
-先检查环境，再让 Codex 按本地 docs/FIRST_RUN.md 安装所需服务。Skill 入口位于 skills/。
+`plan` 不执行服务；查看任务所需素材、对应 Skill 和选定服务的 doctor 命令。聊天、公众号、回放和课程共用统一路由，并保留独立权限和平台边界。
 
-```sh
-python3 wechat_ai.py doctor all
-```
-
-[项目说明](../projects/wechat-and-archiving/wechat-ai-services/README.md) · [源码](../projects/wechat-and-archiving/wechat-ai-services)
-
-<a id="wechat-data-extraction"></a>
-## 微信数据提取
-
-按会话和时间导出本机微信消息与媒体，并提供直播转 Word 的独立工作流。
-
-```sh
-git clone --single-branch --branch history/wechat-data-extraction/main https://github.com/delu543/jasper-projects.git wechat-data-extraction
-cd wechat-data-extraction
-```
-
-macOS 从 scripts/codex_bootstrap.sh doctor 开始；Windows 从 scripts/codex_bootstrap.ps1 doctor 开始。聊天初始化与导出范围分别授权。
-
-[项目说明](../projects/wechat-and-archiving/wechat-data-extraction/README.md) · [源码](../projects/wechat-and-archiving/wechat-data-extraction)
-
-<a id="wechat-public-account-archiver"></a>
-## 公众号本地归档
-
-按公众号整理公开文章与短内容，增量去重、保留进度并输出 Word；当前以被动缓存路线为主。
-
-```sh
-git clone --single-branch --branch history/wechat-public-account-archiver/main https://github.com/delu543/jasper-projects.git wechat-public-account-archiver
-cd wechat-public-account-archiver
-```
-
-macOS。检查不会自动归档；安装和启动请按本地 README.md 的对应步骤进行。
-
-```sh
-./install.sh --check
-```
-
-[项目说明](../projects/wechat-and-archiving/wechat-public-account-archiver/README.md) · [源码](../projects/wechat-and-archiving/wechat-public-account-archiver)
+[功能与使用](../projects/wechat-and-archiving/wechat-ai-services/README.md) · [首次使用](../projects/wechat-and-archiving/wechat-ai-services/docs/FIRST_RUN.md)
 
 <a id="weixin-replay-to-mp3"></a>
 ## 链接与回放转 MP3
@@ -112,42 +77,20 @@ python3 scripts/bootstrap.py doctor
 Windows：[固定便携包与校验方法](downloads.md#windows-mp3)。优先离线安装，不调用旧仓库的在线 bootstrap 下载路径。
 
 <a id="project-observatory"></a>
-## 项目全景开发面板
+## 项目开发观测台
 
-用本地看板呈现目标、开发、验证、交付和运行阶段，结合 Git 与可选 Codex 活动。
-
-```sh
-git clone --single-branch --branch history/project-observatory/main https://github.com/delu543/jasper-projects.git project-observatory
-cd project-observatory
-```
-
-Node.js 20+ 和 Git。把示例目标路径替换成自己的项目。
+两个原看板共用一份目标、问题、进度和验收状态。Node.js 20+，无运行时 npm 依赖。
 
 ```sh
-node bin/project-observatory.mjs init --project /absolute/path/to/your-project
+git clone --single-branch --branch main https://github.com/delu543/jasper-projects.git
+cd jasper-projects/projects/developer-tools/project-observatory
+node bin/project-observatory.mjs init --project /absolute/path/to/your-project --lang zh
 node bin/project-observatory.mjs serve --project /absolute/path/to/your-project
 ```
 
-[项目说明](../projects/developer-tools/project-observatory/README.md) · [源码](../projects/developer-tools/project-observatory)
+Codex 或 Claude 使用 `context --project <绝对路径>` 读取同一份上下文。已有 `.progress-observatory/board.json` 时先用 `migrate` 预览，确认后 `--apply`；原文件保留。
 
-<a id="project-progress-observatory"></a>
-## 项目进度观测台
-
-按项目维护里程碑、验收证据和实时活动；开发活动与已验收成果分开显示。
-
-```sh
-git clone --single-branch --branch history/project-progress-observatory/main https://github.com/delu543/jasper-projects.git project-progress-observatory
-cd project-progress-observatory
-```
-
-Node.js 20+；无需 npm install。目标项目路径需自行指定。
-
-```sh
-node bin/project-progress.mjs init --project /absolute/path/to/your-project
-node bin/project-progress.mjs serve --project /absolute/path/to/your-project --port 4180
-```
-
-[项目说明](../projects/developer-tools/project-progress-observatory/README.md) · [源码](../projects/developer-tools/project-progress-observatory)
+[使用与迁移](../projects/developer-tools/project-observatory/README.md) · [能力与边界](../projects/developer-tools/project-observatory/docs/CAPABILITY_MAP.md)
 
 <a id="claude-residential-ip-rules"></a>
 ## Claude 网络配置规则

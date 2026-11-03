@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "services": [
     {
       "id": "chat",
@@ -34,7 +34,10 @@
         "Markdown",
         "Word",
         "local controller"
-      ]
+      ],
+      "default_workflow": "retained-cache check, bounded collection, discovered Word, separate render review",
+      "coverage": "observed content and complete-publication evidence are separate",
+      "scheduling": "disabled by default; never auto-resume on empty cache"
     },
     {
       "id": "replay",
@@ -56,6 +59,154 @@
       "outputs": [
         "complete collection Word",
         "checkpoint state"
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "chat-export",
+      "service": "chat",
+      "title": "聊天消息与媒体归档",
+      "skill": "wechat-ai-chat",
+      "required_inputs": [
+        "会话",
+        "绝对时间范围",
+        "消息类型"
+      ],
+      "workflow": [
+        "当前账号诊断与只读 dry scan",
+        "通过严格校验后原子导出"
+      ],
+      "conditions": [
+        "首次密钥初始化与私有快照保留分别确认"
+      ]
+    },
+    {
+      "id": "chat-voice-mp4",
+      "service": "chat",
+      "title": "选定语音顺序合成 MP4",
+      "skill": "wechat-ai-chat",
+      "required_inputs": [
+        "会话",
+        "绝对时间范围"
+      ],
+      "workflow": [
+        "direct-voice-mp4 使用同一个聊天引擎",
+        "完整解码并核对数量、顺序与时长"
+      ],
+      "conditions": [
+        "不把普通导出当作首次初始化许可"
+      ]
+    },
+    {
+      "id": "articles-update",
+      "service": "articles",
+      "title": "公众号缓存增量与 Word",
+      "skill": "wechat-ai-articles",
+      "required_inputs": [
+        "已登记的账号",
+        "起止日期或保存的范围"
+      ],
+      "workflow": [
+        "cache-update --check 默认只读核对保留内容与交付回执",
+        "明确采集时使用 --collect；明确导出时使用 --export --accept-discovered",
+        "渲染验收后才 --confirm-delivery --render-reviewed"
+      ],
+      "conditions": [
+        "新增归档范围明确",
+        "旧库与订阅不自动迁移",
+        "仅发现内容不等于全部历史完整"
+      ]
+    },
+    {
+      "id": "articles-history",
+      "service": "articles",
+      "title": "公众号可见历史归档",
+      "skill": "wechat-ai-articles",
+      "required_inputs": [
+        "文章种子链接",
+        "精确账号",
+        "日期范围"
+      ],
+      "workflow": [
+        "优先检查保留内容，缺口与完整性单独报告",
+        "需要可见历史时按 contract 调用 reverse/history-sync/crawl"
+      ],
+      "conditions": [
+        "登录或访问受限暂停相关来源",
+        "不把空缓存当成开启前台恢复的许可"
+      ]
+    },
+    {
+      "id": "articles-subscribe",
+      "service": "articles",
+      "title": "添加公众号与订阅管理",
+      "skill": "wechat-ai-subscriptions",
+      "required_inputs": [
+        "一条公开文章链接",
+        "开始日期或全部历史"
+      ],
+      "workflow": [
+        "web 打开本地控制台登记种子与精确账号",
+        "更新仍使用 articles 同一份配置、归档与去重状态"
+      ],
+      "conditions": [
+        "不自动开启调度或读取旧库"
+      ]
+    },
+    {
+      "id": "replay-word",
+      "service": "replay",
+      "title": "账号回放与完整 Word",
+      "skill": "wechat-ai-replay-word",
+      "required_inputs": [
+        "账号名",
+        "回放种子",
+        "冻结范围",
+        "已授权本地模型"
+      ],
+      "workflow": [
+        "configure / prepare / capture / batch",
+        "transcribe / word / assemble / dashboard；复用同一回放与 ASR 引擎"
+      ],
+      "conditions": [
+        "临时 CA/代理需单独确认",
+        "Apple Silicon 开发预览"
+      ]
+    },
+    {
+      "id": "courses-word",
+      "service": "courses",
+      "title": "课程合集与讲义 Word",
+      "skill": "wechat-ai-courses",
+      "required_inputs": [
+        "授权本地素材清单",
+        "集合与课程层级",
+        "本地模型"
+      ],
+      "workflow": [
+        "plan 核对清单",
+        "run 复用回放 ASR 与 Word，保留讲义和断点"
+      ],
+      "conditions": [
+        "不自动下载模型或读取课程网站账号"
+      ]
+    },
+    {
+      "id": "media-mp3",
+      "service": "media",
+      "title": "链接或本地媒体转 MP3",
+      "skill": "wechat-ai-media",
+      "required_inputs": [
+        "授权链接或本地文件"
+      ],
+      "workflow": [
+        "run / convert-file / verify",
+        "下载、时长证据和完整解码分别核验"
+      ],
+      "conditions": [
+        "发送微信消息另行确认",
+        "Windows 微信播放由用户确认"
       ]
     }
   ]

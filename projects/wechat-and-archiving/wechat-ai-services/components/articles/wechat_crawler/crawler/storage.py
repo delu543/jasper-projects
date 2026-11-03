@@ -11,13 +11,23 @@ from .models import ParsedArticle, now_iso
 from .normalizer import normalize_url, source_domain, stable_url_key
 
 
+class _ClosingConnection(sqlite3.Connection):
+    """Finish the transaction and close at the owning with-block boundary."""
+
+    def __exit__(self, *args):
+        try:
+            return super().__exit__(*args)
+        finally:
+            self.close()
+
+
 class Storage:
     def __init__(self, db_path: str | Path) -> None:
         self.db_path = Path(db_path)
 
     def connect(self) -> sqlite3.Connection:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        conn = sqlite3.connect(self.db_path, timeout=30.0)
+        conn = sqlite3.connect(self.db_path, timeout=30.0, factory=_ClosingConnection)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA busy_timeout = 30000")
         conn.execute("PRAGMA foreign_keys = ON")

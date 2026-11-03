@@ -5,13 +5,14 @@ import html as html_module
 import re
 from datetime import datetime
 from urllib.parse import urljoin
+from zoneinfo import ZoneInfo
 
 from bs4 import BeautifulSoup
 
 from .dedup import normalized_text_hash
 from .models import ParsedArticle
 from .normalizer import extract_mp_params, normalize_url
-from ..text_cleanup import clean_wechat_embedded_text
+from ..text_cleanup import clean_wechat_embedded_text, readable_text_from_content_html
 
 
 class ParseError(RuntimeError):
@@ -76,10 +77,8 @@ class WechatArticleParser:
             if embedded_content_html:
                 embedded_content = BeautifulSoup(embedded_content_html, "html.parser")
                 self._clean_content(embedded_content, source_url)
-                content_text = clean_wechat_embedded_text(
-                    embedded_content.get_text("\n", strip=True)
-                )
                 content_html = str(embedded_content).strip()
+                content_text = readable_text_from_content_html(content_html)
                 image_urls = self._extract_images(embedded_content, source_url)
             else:
                 content_text = clean_wechat_embedded_text(script_body_text or "")
@@ -92,8 +91,8 @@ class WechatArticleParser:
         else:
             content = BeautifulSoup(str(content), "html.parser")
             self._clean_content(content, source_url)
-            content_text = content.get_text("\n", strip=True)
             content_html = str(content).strip()
+            content_text = readable_text_from_content_html(content_html)
             image_urls = self._extract_images(content, source_url)
         if not content_text:
             raise ParseError("empty article body")
@@ -219,7 +218,9 @@ class WechatArticleParser:
             ],
         )
         if ct:
-            return datetime.fromtimestamp(int(ct)).astimezone().isoformat(timespec="seconds")
+            return datetime.fromtimestamp(
+                int(ct), ZoneInfo("Asia/Shanghai")
+            ).isoformat(timespec="seconds")
         return None
 
     def _script_article_text(self, html: str) -> str | None:

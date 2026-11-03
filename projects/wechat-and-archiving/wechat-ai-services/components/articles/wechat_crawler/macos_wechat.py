@@ -313,6 +313,32 @@ class NativeAccessibilityWindows:
                 self._cf.CFRelease(window_array)
             self._cf.CFRelease(application)
 
+    def search_field_focused(self, pid: int) -> bool:
+        """Inspect only focused control metadata, never a chat's text/value."""
+        if pid <= 0 or not self._load():
+            return False
+        application = self._ax.AXUIElementCreateApplication(pid)
+        if not application:
+            return False
+        focused = self._copy_attribute(application, "AXFocusedUIElement")
+        try:
+            if not focused:
+                return False
+            role = self._attribute_text(focused, "AXRole")
+            if role == "AXSearchField":
+                return True
+            if role != "AXTextField":
+                return False
+            label = " ".join(
+                self._attribute_text(focused, attribute)
+                for attribute in ("AXDescription", "AXPlaceholderValue", "AXSubrole")
+            ).lower()
+            return "搜索" in label or "search" in label
+        finally:
+            if focused:
+                self._cf.CFRelease(focused)
+            self._cf.CFRelease(application)
+
     def activate_window(self, pid: int, title: str) -> bool:
         if pid <= 0 or not title or not self._load():
             return False
@@ -515,11 +541,7 @@ class WechatWindowProbe:
         process_output = self._command_output(["ps", "-axo", "pid=,ppid=,command="])
         wechat_pid = self._wechat_pid(process_output)
         app_running = wechat_pid is not None
-        renderer_running = any(
-            "/WeChatAppEx.app/Contents/MacOS/WeChatAppEx" in line
-            and "Helper" not in line
-            for line in process_output.splitlines()
-        )
+        renderer_running = bool(self._renderer_pids(process_output, wechat_pid))
         screen_locked = self._screen_locked()
         windows = tuple(self._read_windows(wechat_pid)) if wechat_pid is not None else ()
         login_shell = bool(windows) and all(
@@ -543,7 +565,7 @@ class WechatWindowProbe:
             strategy = "outer_window_only"
         elif not windows:
             state = "no_visible_window"
-            message = "微信已登录进程存在，但没有可操作窗口；任务将保留并稍后重试"
+            message = "微信进程存在，但没有可操作窗口；任务将保留并稍后重试"
             strategy = "renderer_process_probe"
         else:
             state = "ready"
@@ -562,6 +584,18 @@ class WechatWindowProbe:
     def _screen_locked(self) -> bool:
         output = self._command_output(["ioreg", "-n", "Root", "-d1"])
         return '"IOConsoleLocked" = Yes' in output or '"CGSSessionScreenIsLocked"=Yes' in output
+
+    def search_field_focused(self) -> bool:
+        native = self._native_windows
+        check = getattr(native, "search_field_focused", None)
+        if not callable(check):
+            return False
+        output = self._command_output(["ps", "-axo", "pid=,ppid=,command="])
+        main_pid = self._wechat_pid(output)
+        if main_pid is None:
+            return False
+        pids = [main_pid, *self._renderer_pids(output, main_pid)]
+        return any(check(pid) for pid in pids)
 
     def activate_main_window(self) -> bool:
         if sys.platform != "darwin":
@@ -638,15 +672,36 @@ return outputText
         return windows or self._read_window_server_windows()
 
     @staticmethod
-    def _wechat_pid(process_output: str) -> int | None:
+    def _process_rows(process_output: str) -> list[tuple[int, int, str]]:
+        rows = []
         for line in process_output.splitlines():
-            if "/微信.app/Contents/MacOS/WeChat" not in line or "WeChatAppEx.app" in line:
+            fields = line.strip().split(None, 2)
+            if len(fields) != 3 or not fields[0].isdigit() or not fields[1].isdigit():
                 continue
-            try:
-                return int(line.strip().split(None, 1)[0])
-            except (IndexError, ValueError):
-                continue
+            # Match argv[0], not the whole command with flags/annotations.
+            # In particular crashpad's app_path annotation is not WeChat.
+            rows.append((int(fields[0]), int(fields[1]), fields[2].split(None, 1)[0]))
+        return rows
+
+    @classmethod
+    def _wechat_pid(cls, process_output: str) -> int | None:
+        for pid, _parent, executable in cls._process_rows(process_output):
+            if executable.endswith("/微信.app/Contents/MacOS/WeChat"):
+                return pid
         return None
+
+    @classmethod
+    def _renderer_pids(cls, process_output: str, main_pid: int | None) -> list[int]:
+        rows = cls._process_rows(process_output)
+        main_executable = next(
+            (executable for pid, _parent, executable in rows if pid == main_pid
+             and executable.endswith("/微信.app/Contents/MacOS/WeChat")), None,
+        )
+        if main_executable is None:
+            return []
+        expected = main_executable.rsplit("/", 1)[0] + "/WeChatAppEx.app/Contents/MacOS/WeChatAppEx"
+        return [pid for pid, parent, executable in rows
+                if parent == main_pid and executable == expected]
 
     def _read_window_server_windows(self) -> list[WechatWindow]:
         """Read only public window metadata when WeChat omits AXWindow nodes."""
@@ -706,9 +761,16 @@ class WechatPreparationResult:
     message: str
     account_name: str
     article_open_attempted: bool
+    session_verified: bool = False
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
+
+
+class _RecoveryInterrupted(RuntimeError):
+    def __init__(self, runtime: WechatRuntimeStatus) -> None:
+        super().__init__(runtime.message)
+        self.status = runtime.state if runtime.state in ("needs_login", "screen_locked") else "unverified"
 
 
 class WechatSessionRefresher:
@@ -725,6 +787,7 @@ class WechatSessionRefresher:
         self._run = runner
         self._sleep = sleeper
         self._input = input_driver or WechatForegroundInput(sleeper)
+        self._article_open_attempted = False
 
     def prepare_account(
         self,
@@ -736,6 +799,7 @@ class WechatSessionRefresher:
         session_poll_interval_seconds: float = 0.75,
     ) -> WechatPreparationResult:
         name = account_name.strip()
+        self._article_open_attempted = False
         if not name:
             return WechatPreparationResult("failed", "公众号名称为空", name, False)
         before = self.probe.inspect()
@@ -744,7 +808,8 @@ class WechatSessionRefresher:
             self._sleep(1.0)
             before = self.probe.inspect()
         if before.state != "ready":
-            return WechatPreparationResult("needs_login", before.message, name, False)
+            status = before.state if before.state in ("needs_login", "screen_locked") else "unverified"
+            return WechatPreparationResult(status, before.message, name, False)
         public_seed_url = self._public_article_seed_url(seed_url)
         baseline_fingerprint = (
             self._safe_session_fingerprint(session_fingerprint)
@@ -769,6 +834,9 @@ class WechatSessionRefresher:
         )
         clipboard = self._read_clipboard()
         try:
+            # Cache reads and clipboard access can outlive the original window
+            # snapshot. Never post an event using that stale login state.
+            self._ready_status()
             search_value = public_seed_url or name
             if not self._write_clipboard(search_value.encode("utf-8")):
                 return WechatPreparationResult("failed", "无法临时写入剪贴板", name, False)
@@ -778,14 +846,13 @@ class WechatSessionRefresher:
                 # touching the main window so the seed cannot land in a chat.
                 result = self._open_public_seed_from_search_window(name, search_window)
                 if result is not None:
-                    self._wait_for_public_seed_cache(
+                    return self._wait_for_public_seed_cache(
                         result,
                         session_fingerprint,
                         baseline_fingerprint,
                         timeout=session_timeout_seconds,
                         interval=session_poll_interval_seconds,
                     )
-                    return result
             if not self.probe.activate_main_window():
                 return WechatPreparationResult("failed", "无法激活微信主窗口", name, False)
             if main_window is not None:
@@ -806,7 +873,9 @@ class WechatSessionRefresher:
                 if callable(activate_named) or needs_click_fallback:
                     self._sleep(0.2)
             if not self._open_global_search(main_window):
-                return WechatPreparationResult("failed", "无法打开微信主界面搜索", name, False)
+                return WechatPreparationResult(
+                    "unverified", "无法确认或操作微信搜索焦点（可能受窗口保护影响）；未继续粘贴或抓取", name, False,
+                )
             if public_seed_url:
                 result = self._open_public_seed_article(name)
                 if not result.article_open_attempted:
@@ -818,14 +887,13 @@ class WechatSessionRefresher:
                         )
                         if fallback is not None:
                             result = fallback
-                self._wait_for_public_seed_cache(
+                return self._wait_for_public_seed_cache(
                     result,
                     session_fingerprint,
                     baseline_fingerprint,
                     timeout=session_timeout_seconds,
                     interval=session_poll_interval_seconds,
                 )
-                return result
             baseline_fingerprint = self._safe_session_fingerprint(session_fingerprint)
             # The first row is commonly the local account card. The second row
             # is the public "搜一搜" route that opens the article search page.
@@ -865,6 +933,7 @@ class WechatSessionRefresher:
                 session_poll_interval_seconds,
             )
             article_open_attempted = False
+            session_verified = False
             for tab_y_ratio, article_y_ratio in layouts:
                 if callable(activate_named) and not activate_named(profile_window.title):
                     return WechatPreparationResult("failed", "无法重新聚焦公众号主页", name, article_open_attempted)
@@ -877,13 +946,18 @@ class WechatSessionRefresher:
                 if not self._click_ratio(profile_window, 0.50, article_y_ratio):
                     return WechatPreparationResult("failed", "无法打开公众号主页中的文章", name, article_open_attempted)
                 article_open_attempted = True
+                self._article_open_attempted = True
                 self._sleep(2.0)
-                if session_fingerprint is None or self._wait_for_session_change(
+                self._ready_status()
+                if session_fingerprint is None:
+                    break
+                if self._wait_for_session_change(
                     session_fingerprint,
                     baseline_fingerprint,
                     timeout=quick_layout_timeout,
                     interval=session_poll_interval_seconds,
                 ):
+                    session_verified = True
                     break
             else:
                 remaining_timeout = max(
@@ -898,15 +972,24 @@ class WechatSessionRefresher:
                 ):
                     return WechatPreparationResult(
                         "unverified",
-                        "已从精确公众号主页有界尝试文章入口，但尚未确认新会话；历史接口将进行一次最终验证",
+                        "已从精确公众号主页有界尝试文章入口，但尚未确认新会话；已停止历史接口重试",
                         name,
                         article_open_attempted,
                     )
+                session_verified = True
             return WechatPreparationResult(
                 "attempted",
-                "已从精确公众号主页打开文章并确认新会话；历史接口将从最新页继续验证精确 biz",
+                (
+                    "已从精确公众号主页确认新会话；历史接口将从最新页继续验证精确 biz"
+                    if session_verified else "已尝试精确公众号主页文章入口；未验证新会话"
+                ),
                 name,
                 True,
+                session_verified,
+            )
+        except _RecoveryInterrupted as exc:
+            return WechatPreparationResult(
+                exc.status, f"微信恢复已中止：{exc}", name, self._article_open_attempted,
             )
         finally:
             self._write_clipboard(clipboard)
@@ -919,16 +1002,25 @@ class WechatSessionRefresher:
         *,
         timeout: float,
         interval: float,
-    ) -> None:
+    ) -> WechatPreparationResult:
+        self._ready_status()
         if not result.article_open_attempted or fingerprint is None:
-            return
+            return result
         # No extra UI or page inspection: only wait until the exact-account
         # local cache has finished writing before the immediate API retry.
-        self._wait_for_session_change(
+        verified = self._wait_for_session_change(
             fingerprint,
             baseline,
             timeout=timeout,
             interval=interval,
+        )
+        return WechatPreparationResult(
+            "attempted" if verified else "unverified",
+            (
+                "已确认保存链接对应公众号的新会话；历史接口将从最新页验证精确 biz"
+                if verified else "已尝试保存的公开链接，但尚未确认新会话；已停止历史接口重试"
+            ),
+            result.account_name, result.article_open_attempted, verified,
         )
 
     def _open_public_seed_from_search_window(
@@ -965,7 +1057,8 @@ class WechatSessionRefresher:
 
     def _select_public_search_tab(self, window: WechatWindow) -> bool:
         """Select the first retained Search tab before replacing its query."""
-        if window.width < 300 or window.height < 300:
+        window = self._live_window(window)
+        if window is None or window.width < 300 or window.height < 300:
             return False
         x = int(window.x + min(max(window.width * 0.35, 180), 250))
         y = int(window.y + 18)
@@ -991,7 +1084,9 @@ class WechatSessionRefresher:
         # WeChat's public Search page. The top "访问网页" card then opens the
         # exact article. Do not search the account name when a seed URL exists.
         self._sleep(0.35)
-        if not self._input.press_key(36):
+        if not self._search_field_focused():
+            return WechatPreparationResult("unverified", "搜索焦点已丢失；未提交链接", account_name, False)
+        if not self._press_key(36):
             return WechatPreparationResult("failed", "无法提交公开文章链接", account_name, False)
         search_window = self._wait_for_window("微信 (窗口)", timeout=2.0)
         if search_window is None:
@@ -1009,10 +1104,12 @@ class WechatSessionRefresher:
     ) -> WechatPreparationResult:
         if not self._click_public_web_result(search_window):
             return WechatPreparationResult("failed", "无法打开链接的访问网页入口", account_name, False)
+        self._article_open_attempted = True
         self._sleep(2.0)
+        self._ready_status()
         return WechatPreparationResult(
             "attempted",
-            "已通过保存的公开文章链接打开正文；历史接口将立即从最新页验证精确 biz",
+            "已尝试保存链接的访问网页入口；尚未验证正文或新会话",
             account_name,
             True,
         )
@@ -1024,18 +1121,28 @@ class WechatSessionRefresher:
         if main_window is None or not self._click_ratio(main_window, 0.23, 0.035):
             return False
         self._sleep(0.35)
-        return self._input.press_key(0, NativeMacInput.COMMAND_FLAG) and self._input.press_key(
-            9, NativeMacInput.COMMAND_FLAG
-        )
+        for key_code in (0, 9):
+            if self._live_window(main_window) is None or not self._search_field_focused():
+                return False
+            if not self._press_key(key_code, NativeMacInput.COMMAND_FLAG):
+                return False
+        return True
+
+    def _search_field_focused(self) -> bool:
+        self._ready_status()
+        check = getattr(self.probe, "search_field_focused", None)
+        return bool(callable(check) and check())
 
     def _confirm_public_search_result(self) -> bool:
-        if not self._input.press_key(125):
+        if not self._search_field_focused():
+            return False
+        if not self._press_key(125):
             return False
         self._sleep(0.2)
-        if not self._input.press_key(125):
+        if not self._press_key(125):
             return False
         self._sleep(0.2)
-        return self._input.press_key(36)
+        return self._press_key(36)
 
     def _submit_exact_public_search(self, search_window: WechatWindow) -> bool:
         # WeChat may turn the main-window suggestion into a related query such
@@ -1044,24 +1151,38 @@ class WechatSessionRefresher:
         if not self._click_ratio(search_window, 0.38, 0.10):
             return False
         self._sleep(0.2)
-        if not (
-            self._input.press_key(0, NativeMacInput.COMMAND_FLAG)
-            and self._input.press_key(9, NativeMacInput.COMMAND_FLAG)
-        ):
-            return False
+        for key_code in (0, 9):
+            if self._live_window(search_window) is None or not self._press_key(
+                key_code, NativeMacInput.COMMAND_FLAG,
+            ):
+                return False
         self._sleep(0.15)
         return self._click_public_search_button(search_window)
 
     def _click_public_search_button(self, window: WechatWindow) -> bool:
-        if window.width < 300 or window.height < 300:
+        window = self._live_window(window)
+        if window is None or window.width < 300 or window.height < 300:
             return False
         x = int(window.x + min(window.width * 0.80, 922))
         y = int(window.y + window.height * 0.10)
         return self._input.click(x, y)
 
     def _window_named(self, title: str) -> WechatWindow | None:
-        candidates = [window for window in self.probe.inspect().windows if window.title == title and not window.minimized]
+        candidates = [window for window in self._ready_status().windows if window.title == title and not window.minimized]
         return candidates[0] if candidates else None
+
+    def _ready_status(self) -> WechatRuntimeStatus:
+        runtime = self.probe.inspect()
+        if runtime.state != "ready" or runtime.screen_locked:
+            raise _RecoveryInterrupted(runtime)
+        return runtime
+
+    def _live_window(self, window: WechatWindow) -> WechatWindow | None:
+        return self._window_named(window.title)
+
+    def _press_key(self, key_code: int, flags: int = 0) -> bool:
+        self._ready_status()
+        return self._input.press_key(key_code, flags)
 
     def _content_window(self) -> WechatWindow | None:
         windows = [window for window in self.probe.inspect().windows if not window.minimized]
@@ -1088,7 +1209,8 @@ class WechatSessionRefresher:
         return None
 
     def _click_ratio(self, window: WechatWindow, x_ratio: float, y_ratio: float) -> bool:
-        if window.width < 300 or window.height < 300:
+        window = self._live_window(window)
+        if window is None or window.width < 300 or window.height < 300:
             return False
         x = int(window.x + window.width * x_ratio)
         y = int(window.y + window.height * y_ratio)
@@ -1096,7 +1218,8 @@ class WechatSessionRefresher:
 
     def _click_public_web_result(self, window: WechatWindow) -> bool:
         """Click the top public web card in compact and wide WeChat layouts."""
-        if window.width < 300 or window.height < 300:
+        window = self._live_window(window)
+        if window is None or window.width < 300 or window.height < 300:
             return False
         # WeChat caps the result column width on wide windows instead of
         # stretching it. Bound the target inside that column while retaining
@@ -1121,7 +1244,9 @@ class WechatSessionRefresher:
         deadline = time.monotonic() + bounded_timeout
         max_attempts = max(1, int(bounded_timeout / bounded_interval) + 1)
         for attempt in range(max_attempts):
+            self._ready_status()
             current = self._safe_session_fingerprint(fingerprint)
+            self._ready_status()
             if current and current != baseline:
                 return True
             if attempt + 1 >= max_attempts or time.monotonic() >= deadline:

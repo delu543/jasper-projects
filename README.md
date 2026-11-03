@@ -4,7 +4,7 @@
 
 <p align="center">把想法做成实用工具。<br>围绕创作、知识与日常工作，持续构建和分享。</p>
 
-<p align="center"><b>9 个公开项目</b> &nbsp; / &nbsp; <b>4 个主题分类</b></p>
+<p align="center"><b>6 个公开项目</b> &nbsp; / &nbsp; <b>4 个主题分类</b></p>
 
 <p align="center">
   <a href="docs/getting-started.md"><b>使用与安装 ↗</b></a> &nbsp;&nbsp; · &nbsp;&nbsp;
@@ -45,34 +45,20 @@
 <a id="wechat-and-archiving"></a>
 ## 微信与媒体归档
 
-让聊天、文章、课程和媒体成为可保存、可查找的资料。
+按交付目标选择综合微信服务或专用音频工具。
 
 <table>
 <tr>
 <td width="50%" valign="top">
 <h3><a href="projects/wechat-and-archiving/wechat-ai-services/">微信 AI 服务</a></h3>
-<p>聊天导出、公众号归档、直播与课程转 Word、媒体转 MP3 的统一入口。</p>
-<p><sub>综合工具箱 · 开发预览</sub></p>
+<p>聊天导出、公众号增量与去重、回放和课程 Word 汇入一个入口，按目标选择一份实现。</p>
+<p><sub>聊天与附件 · 公众号归档 · 回放与课程</sub></p>
 <p><a href="docs/getting-started.md#wechat-ai-services"><b>开始使用 ↗</b></a> &nbsp;·&nbsp; <a href="projects/wechat-and-archiving/wechat-ai-services/">源码</a> &nbsp;·&nbsp; <a href="projects/wechat-and-archiving/wechat-ai-services/README.md">文档</a></p>
 </td>
 <td width="50%" valign="top">
-<h3><a href="projects/wechat-and-archiving/wechat-data-extraction/">微信数据提取</a></h3>
-<p>按会话与时间导出本机微信消息和媒体，另提供直播回放转 Word 的工作流。</p>
-<p><sub>聊天记录 · 消息附件 · 直播文字稿</sub></p>
-<p><a href="docs/getting-started.md#wechat-data-extraction"><b>开始使用 ↗</b></a> &nbsp;·&nbsp; <a href="projects/wechat-and-archiving/wechat-data-extraction/">源码</a> &nbsp;·&nbsp; <a href="projects/wechat-and-archiving/wechat-data-extraction/README.md">文档</a></p>
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
-<h3><a href="projects/wechat-and-archiving/wechat-public-account-archiver/">公众号本地归档</a></h3>
-<p>按公众号整理公开文章与短内容，支持增量去重、进度保留和 Word 导出。</p>
-<p><sub>文章归档 · 当前以被动缓存路线为主</sub></p>
-<p><a href="docs/getting-started.md#wechat-public-account-archiver"><b>开始使用 ↗</b></a> &nbsp;·&nbsp; <a href="projects/wechat-and-archiving/wechat-public-account-archiver/">源码</a> &nbsp;·&nbsp; <a href="projects/wechat-and-archiving/wechat-public-account-archiver/README.md">文档</a></p>
-</td>
-<td width="50%" valign="top">
 <h3><a href="projects/wechat-and-archiving/weixin-replay-to-mp3/">链接与回放转 MP3</a></h3>
-<p>把有权处理的视频号、课程、网页媒体或本地音视频转为经过完整解码验证的 MP3。</p>
-<p><sub>音频提取 · 回放保存 · Windows 便携包</sub></p>
+<p>专注把授权链接或本地音视频转为 MP3，保留断点下载、时长证据与完整解码检查。</p>
+<p><sub>专用音频工具 · Windows 便携包</sub></p>
 <p><a href="docs/getting-started.md#weixin-replay-to-mp3"><b>开始使用 ↗</b></a> &nbsp;·&nbsp; <a href="projects/wechat-and-archiving/weixin-replay-to-mp3/">源码</a> &nbsp;·&nbsp; <a href="projects/wechat-and-archiving/weixin-replay-to-mp3/README.md">文档</a></p>
 </td>
 </tr>
@@ -81,21 +67,15 @@
 <a id="developer-tools"></a>
 ## 开发工具
 
-看清项目走到哪里，以及哪些结果已经得到验证。
+让目标、开发活动、问题与验收证据落在同一个项目中。
 
 <table>
 <tr>
-<td width="50%" valign="top">
-<h3><a href="projects/developer-tools/project-observatory/">项目全景开发面板</a></h3>
-<p>在本地看板中呈现目标、开发、验证、交付与运行阶段，结合 Git 和可选的 Codex 活动。</p>
-<p><sub>全流程视图 · 阶段与交付</sub></p>
+<td width="1000" valign="top">
+<h3><a href="projects/developer-tools/project-observatory/">项目开发观测台</a></h3>
+<p>一张本地面板管理目标、分层进度、问题和任务职责；结合实时信号，明确版本、环境与验收证据。</p>
+<p><sub>项目全景与进度 · 问题跟踪 · Codex / Claude 上下文</sub></p>
 <p><a href="docs/getting-started.md#project-observatory"><b>开始使用 ↗</b></a> &nbsp;·&nbsp; <a href="projects/developer-tools/project-observatory/">源码</a> &nbsp;·&nbsp; <a href="projects/developer-tools/project-observatory/README.md">文档</a></p>
-</td>
-<td width="50%" valign="top">
-<h3><a href="projects/developer-tools/project-progress-observatory/">项目进度观测台</a></h3>
-<p>为每个项目维护里程碑、验收证据和实时活动，清楚区分正在进行的工作与已验收成果。</p>
-<p><sub>轻量看板 · 里程碑与验收</sub></p>
-<p><a href="docs/getting-started.md#project-progress-observatory"><b>开始使用 ↗</b></a> &nbsp;·&nbsp; <a href="projects/developer-tools/project-progress-observatory/">源码</a> &nbsp;·&nbsp; <a href="projects/developer-tools/project-progress-observatory/README.md">文档</a></p>
 </td>
 </tr>
 </table>
@@ -128,18 +108,15 @@
 <details>
 <summary><b>项目索引、历史与许可</b></summary>
 
-查看[迁移记录](docs/migration.md)和[原项目许可](docs/licenses.md)。原有源码、提交历史和许可证分别保留。
+查看[功能融合](docs/INTEGRATION_MAP.md)、[历史与来源](docs/migration.md)和[许可范围](docs/licenses.md)。Codex 与 Claude 从根目录执行约定进入当前项目。
 
 | 分类 | 项目目录 |
 | --- | --- |
 | 内容创作 | [ai-video-production](projects/content-creation/ai-video-production/) |
 | 内容创作 | [digital-human-workflow](projects/content-creation/digital-human-workflow/) |
 | 微信与媒体归档 | [wechat-ai-services](projects/wechat-and-archiving/wechat-ai-services/) |
-| 微信与媒体归档 | [wechat-data-extraction](projects/wechat-and-archiving/wechat-data-extraction/) |
-| 微信与媒体归档 | [wechat-public-account-archiver](projects/wechat-and-archiving/wechat-public-account-archiver/) |
 | 微信与媒体归档 | [weixin-replay-to-mp3](projects/wechat-and-archiving/weixin-replay-to-mp3/) |
 | 开发工具 | [project-observatory](projects/developer-tools/project-observatory/) |
-| 开发工具 | [project-progress-observatory](projects/developer-tools/project-progress-observatory/) |
 | 网络配置 | [claude-residential-ip-rules](projects/networking/claude-residential-ip-rules/) |
 
 </details>

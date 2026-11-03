@@ -8,6 +8,7 @@ from pathlib import Path
 import subprocess
 import sys
 from services.runtime import ROOT, REPLAY, SERVICES, home, private_dir, python_path, doctor, install, child_env, supported
+from services.catalog import capabilities, plan
 
 
 def command(service, args):
@@ -50,10 +51,14 @@ def main():
     for action in ('doctor', 'install'):
         x = sub.add_parser(action); x.add_argument('service', choices=SERVICES + (('all',) if action == 'doctor' else ()))
     sub.add_parser('capabilities')
+    task = sub.add_parser('plan', help='Return task inputs and one canonical execution route; runs nothing.')
+    task.add_argument('task', choices=[item['id'] for item in capabilities()['tasks']])
     r = sub.add_parser('run'); r.add_argument('service', choices=SERVICES); r.add_argument('args', nargs=argparse.REMAINDER)
     a = p.parse_args()
     if a.action == 'capabilities':
-        print((ROOT/'docs/capabilities.json').read_text(encoding='utf-8')); return 0
+        print(json.dumps(capabilities(), ensure_ascii=False, indent=2)); return 0
+    if a.action == 'plan':
+        print(json.dumps(plan(a.task), ensure_ascii=False, indent=2)); return 0
     if a.action == 'doctor':
         result = [doctor(s) for s in SERVICES] if a.service == 'all' else doctor(a.service)
         print(json.dumps(result, ensure_ascii=False, indent=2)); return 0

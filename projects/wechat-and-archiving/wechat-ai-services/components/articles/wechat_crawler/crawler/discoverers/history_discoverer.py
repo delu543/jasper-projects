@@ -56,10 +56,13 @@ class HistoryDiscoveryError(RuntimeError):
     pass
 
 
+class HistoryAccessRestrictedError(HistoryDiscoveryError):
+    """A native verification/access limit, never an automatic refresh signal."""
+
+
 SESSION_RECOVERY_MARKERS = (
     "no signed article url found",
     "missing appmsg_token",
-    "requires verification",
     "ret=-3",
     "ret=-6",
     "invalid appmsg_token",
@@ -82,7 +85,6 @@ SESSION_ERROR_PRIORITY = {
     "signed article URL is missing required session fields": 1,
     "signed article URL fetch failed": 2,
     "missing appmsg_token in signed article page": 3,
-    "signed article URL requires verification": 4,
 }
 
 TRANSIENT_HISTORY_MARKERS = (
@@ -93,12 +95,23 @@ TRANSIENT_HISTORY_MARKERS = (
 )
 
 
+def is_history_access_restriction(error: object) -> bool:
+    message = str(error).lower()
+    return isinstance(error, HistoryAccessRestrictedError) or any(
+        marker in message for marker in ("requires verification", "request restricted")
+    )
+
+
 def is_session_recovery_error(error: object) -> bool:
+    if is_history_access_restriction(error):
+        return False
     message = str(error).lower()
     return any(marker in message for marker in SESSION_RECOVERY_MARKERS)
 
 
 def is_transient_history_error(error: object) -> bool:
+    if is_history_access_restriction(error):
+        return False
     message = str(error).lower()
     return any(marker in message for marker in TRANSIENT_HISTORY_MARKERS)
 
@@ -226,9 +239,12 @@ class WechatHistoryDiscoverer:
                 except (httpx.HTTPError, httpx.InvalidURL):
                     record_error("signed article URL fetch failed")
                     continue
+                if response.status_code in {401, 403, 429}:
+                    raise HistoryAccessRestrictedError(
+                        f"signed article URL request restricted: {response.status_code}"
+                    )
                 if "wappoc_appmsgcaptcha" in str(response.url) or "验证码" in response.text:
-                    record_error("signed article URL requires verification")
-                    continue
+                    raise HistoryAccessRestrictedError("signed article URL requires verification")
                 token = self._extract_appmsg_token(response.text)
                 if not token:
                     record_error("missing appmsg_token in signed article page")
@@ -263,9 +279,9 @@ class WechatHistoryDiscoverer:
         except httpx.HTTPError as exc:
             raise HistoryDiscoveryError(f"profile history request failed: {exc.__class__.__name__}") from exc
         if response.status_code in {401, 403, 429}:
-            raise HistoryDiscoveryError(f"profile history request restricted: {response.status_code}")
+            raise HistoryAccessRestrictedError(f"profile history request restricted: {response.status_code}")
         if "验证码" in response.text or "wappoc" in str(response.url):
-            raise HistoryDiscoveryError("profile history request requires verification")
+            raise HistoryAccessRestrictedError("profile history request requires verification")
         try:
             data = response.json()
         except ValueError as exc:

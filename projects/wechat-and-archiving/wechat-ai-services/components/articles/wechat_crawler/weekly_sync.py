@@ -139,9 +139,11 @@ class ExistingCrawlerAdapter:
                     automation_cfg.get("session_ready_timeout_seconds", 15.0)
                 ),
             )
-            if preparation.article_open_attempted:
+            if preparation.session_verified:
                 progress("preflight", 16, {})
                 runtime = execute()
+            else:
+                runtime.message = f"{runtime.message}\n自动微信恢复未通过验证：{preparation.message}"
         return CrawlResult(
             status=runtime.status,
             message=runtime.message,
@@ -293,6 +295,25 @@ class WeeklySyncRunner:
                 delay=timedelta(hours=retry_hours),
             )
             return SyncResult(job_id, account_name, "needs_session", 0, None, outcome.message)
+        if outcome.status == "blocked":
+            self.automation.update_job(
+                job_id,
+                status="blocked",
+                phase="blocked",
+                counts=counts,
+                checkpoint=checkpoint,
+                error_message=outcome.message,
+                finished=True,
+            )
+            # All current subscriptions use the same local WeChat public
+            # session. A verification/access restriction is not evidence that
+            # another account can safely retry through that shared session.
+            for affected in self.automation.list_subscriptions():
+                if affected["enabled"] or int(affected["id"]) == int(subscription["id"]):
+                    self.automation.set_subscription_state(
+                        int(affected["id"]), "blocked", f"共享微信公开会话已暂停：{outcome.message}"
+                    )
+            return SyncResult(job_id, account_name, "blocked", 0, None, outcome.message)
         if outcome.status != "completed":
             self.automation.update_job(
                 job_id,
@@ -449,6 +470,14 @@ class WeeklySyncRunner:
         for job in jobs:
             if self.automation.is_automation_paused():
                 break
+            subscription, account = self._context(job)
+            if subscription["state"] == "blocked" and job["status"] != "completed":
+                message = str(subscription["last_error"] or "共享微信公开会话访问受限")
+                self.automation.update_job(
+                    str(job["id"]), status="blocked", phase="blocked", error_message=message, finished=True
+                )
+                results.append(SyncResult(str(job["id"]), str(account["account_name"]), "blocked", 0, None, message))
+                continue
             if job["status"] not in ("completed", "blocked"):
                 results.append(self.run_job(str(job["id"])))
         cycle_keys = {str(job["cycle_key"]) for job in jobs}

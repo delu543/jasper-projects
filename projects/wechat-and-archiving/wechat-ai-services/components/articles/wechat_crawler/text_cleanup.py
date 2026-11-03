@@ -11,6 +11,35 @@ _EMBEDDED_HTML_RE = re.compile(
     r"<(?:a|br|div|li|ol|p|section|span|ul)\b",
     flags=re.IGNORECASE,
 )
+_CONTENT_BLOCK_TAGS = (
+    "article",
+    "blockquote",
+    "div",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "li",
+    "p",
+    "section",
+    "table",
+    "tr",
+)
+
+
+def readable_text_from_content_html(value: str) -> str:
+    """Keep block breaks without splitting adjacent inline WeChat text nodes."""
+
+    soup = BeautifulSoup(value, "html.parser")
+    for node in soup(["script", "style", "noscript"]):
+        node.decompose()
+    for br in soup.find_all("br"):
+        br.replace_with("\n")
+    for block in soup.find_all(_CONTENT_BLOCK_TAGS):
+        block.insert_before("\n")
+    return clean_wechat_embedded_text(soup.get_text(""))
 
 
 def clean_wechat_embedded_text(value: str) -> str:

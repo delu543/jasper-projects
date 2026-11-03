@@ -1,24 +1,36 @@
 #!/usr/bin/env node
 import path from 'node:path';
 import { realpath } from 'node:fs/promises';
-import { createProject, readConfig } from '../lib/config.mjs';
+import { createProject, readConfig, milestoneProgress, atomicJson, runtimePath } from '../lib/config.mjs';
 import { startServer } from '../lib/server.mjs';
+import { collectSnapshot } from '../lib/collect.mjs';
+import { agentContext } from '../lib/project.mjs';
+import { migrateProgress } from '../lib/migrate.mjs';
 
 function option(args,name,fallback) {const i=args.indexOf(`--${name}`);return i>=0?args[i+1]??fallback:fallback;}
 const [action='help',...args]=process.argv.slice(2);
-if(action==='help'||args.includes('--help')){
+if(['help','--help','-h'].includes(action)||args.includes('--help')){
+  process.stdout.write('Read-only agent context: context --project PATH\nLegacy import preview: migrate --project PATH; add --apply to import without changing the old board.\nOther commands: doctor, refresh\n\n');
   process.stdout.write(`Project Observatory\n\n  project-observatory init --project . [--lang zh|en] [--name NAME]\n  project-observatory serve --project . [--port 4187]\n  project-observatory status --project .\n\nRun init separately inside each project. Data stays in that project's .project-observatory directory.\n`);process.exit(0);
 }
 try {
   const root=await realpath(path.resolve(option(args,'project','.')));
-  if(action==='init'){
+  if(action==='migrate'){
+    process.stdout.write(JSON.stringify(await migrateProgress(root,{apply:args.includes('--apply')}),null,2)+'\n');
+  } else if(action==='init'){
     const result=await createProject(root,{language:option(args,'lang','en'),name:option(args,'name',null)});
     process.stdout.write(`${result.created?'Created':'Already initialized'}: ${path.join(root,'.project-observatory','project.json')}\n`);
     process.stdout.write('Local data is ignored by this checkout\'s local Git exclude (or .gitignore outside Git).\n');
   } else if(action==='serve'){
     await readConfig(root);
     await startServer(root,{port:Number(option(args,'port',4187))});
-  } else if(action==='status'){
+  } else if(['context','refresh'].includes(action)){
+    const config=await readConfig(root);
+    const runtime=await collectSnapshot(root,config);
+    if(action==='refresh')await atomicJson(runtimePath(root),runtime);
+    const progress=milestoneProgress(config,runtime.git?.head,runtime.git?.dirtyCount,runtime.git?.stale);
+    process.stdout.write(JSON.stringify(agentContext(config,runtime,progress),null,2)+'\n');
+  } else if(['status','doctor'].includes(action)){
     const config=await readConfig(root);process.stdout.write(`${config.projectName}: ${config.milestones.length} milestones\n`);
   } else throw new Error(`Unknown command: ${action}`);
 } catch(error) {process.stderr.write(`Project Observatory: ${error.message}\n`);process.exitCode=1;}

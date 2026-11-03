@@ -87,6 +87,11 @@ def main(argv: list[str] | None = None) -> int:
         parser.error(str(exc))
     setup_logging(args.verbose)
     config = load_config(args.config)
+    if args.command == "cache-update":
+        from .cache_update import command
+        return command(args, config)
+    if args.command == "weekly-run":
+        return cmd_weekly_run(args, config)
     storage = Storage(config["database"]["path"])
     storage.init_db()
 
@@ -251,6 +256,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="Resume the current scheduled job instead of creating a separate manual cycle.",
     )
 
+    cache = sub.add_parser("cache-update", help="Passive retained cache → de-duplication → discovered Word; default is read-only.")
+    from .cache_update import add_arguments
+    add_arguments(cache)
+
+    passive = sub.add_parser("weekly-run", help="Experimental bound biz-push increment; no automatic setup. For retained cache use cache-update.")
+    passive.add_argument("--until", help="Inclusive publication end date; default today.")
+    passive.add_argument("--account-biz", help="Limit to one exact enabled subscription.")
+    checks = passive.add_mutually_exclusive_group()
+    checks.add_argument("--plan-only", action="store_true", help="Read product boundaries only; no WeChat/helper/network/writes.")
+    checks.add_argument("--check", action="store_true", help="Read-only helper/coverage health check; no public requests or Word.")
+    passive.add_argument("--allow-partial", action="store_true", help="Explicitly export available bodies without advancing incomplete checkpoints.")
+    passive.add_argument("--search-gaps", action="store_true", default=True, help="One ordinary PC query/account (default); never proves completeness.")
+    passive.add_argument("--no-search", dest="search_gaps", action="store_false", help="Skip optional PC cross-check for this run.")
+    passive.add_argument("--require-complete", action="store_true", help="Keep strict full-publication acceptance; otherwise export explicitly labelled observed increments.")
+    passive.add_argument("--source", choices=("auto", "cache", "biz"), default="auto",
+                         help="auto (default): bound biz DB or one setup notice; cache: explicit manual-refresh fallback; never automatic setup.")
+
     automation_prepare = sub.add_parser(
         "automation-prepare-session",
         help="Open one saved public seed in visible WeChat without reading WeChat app data.",
@@ -320,6 +342,30 @@ def load_config(path: str | Path) -> dict[str, Any]:
         if value:
             config[section]["path"] = str(Path(os.path.expandvars(str(value))).expanduser())
     return config
+
+
+def cmd_weekly_run(args, config):
+    from datetime import datetime
+    from .passive_weekly import PassiveWeeklyRunner
+    from .weekly_source_router import WeeklySourceRouter, public_source_health
+
+    settings = config.get("passive_weekly", {})
+    mode = getattr(args, "source", "auto")
+    runner = PassiveWeeklyRunner(config["database"]["path"], config["output"]["path"], settings,
+                                 sources=WeeklySourceRouter(settings, mode))
+    until = args.until or datetime.now().astimezone().date().isoformat()
+    try:
+        if args.plan_only or args.check:
+            result = runner.inspect(until, biz=args.account_biz, source_check=args.check)
+        else:
+            result = runner.run(until, biz=args.account_biz, allow_partial=args.allow_partial,
+                                search_gaps=args.search_gaps, observed=not args.require_complete)
+    except Exception:
+        result = {"status": "blocked", "reason": "weekly_pipeline_local_check_failed"}
+    public_source_health(result, mode)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0 if result["status"] in ("plan_only", "completed", "observed_completed") or (
+        result["status"] == "health_checked" and result.get("source_status") == "read") else 2
 
 
 def cmd_discover(args: argparse.Namespace, config: dict[str, Any], storage: Storage) -> int:

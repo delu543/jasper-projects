@@ -2,9 +2,9 @@
 
 完整固定版本见 `sources.lock.json`：
 
-- [聊天与回放](https://github.com/delu543/wechat-data-extraction)：`a4f7525c50713935dcd145f45314036fe0fe590a`，保留解析、快照、媒体、初始化、回放核心。来源仓库在该版本无许可；同一权利人已明确授权本整合仓库中复制和适配的聊天/回放源码采用 MIT。此授权不改变来源仓库自身的许可状态。
-- [转录媒体依赖](https://github.com/delu543/weixin-replay-to-mp3)：`4cec3daecf67d65ec10eb5f1ef0c86783efbe514`，MIT，保留第三方声明。是转录的依赖来源，不另扩为一个业务整合项目。
-- [公众号发布基线](https://github.com/delu543/wechat-public-account-archiver)：`b2d0fc39fb52a93f482da5f6fcebee55e6c09dc9`，MIT；不是该仓库默认分支旧版本。另审阅采用业务工作区的功能增强和发布工作区的安全规则更新。
+- [聊天与回放](https://github.com/delu543/jasper-projects/tree/1c340a063837c7ea7981b55dbdf93c684ae13903)：`a4f7525c50713935dcd145f45314036fe0fe590a`，保留解析、快照、媒体、初始化、回放核心。来源仓库在该版本无许可；同一权利人已明确授权本整合仓库中复制和适配的聊天/回放源码采用 MIT。此授权不改变来源仓库自身的许可状态。
+- [转录媒体依赖](https://github.com/delu543/jasper-projects/tree/4cec3daecf67d65ec10eb5f1ef0c86783efbe514)：`4cec3daecf67d65ec10eb5f1ef0c86783efbe514`，MIT，保留第三方声明。是转录的依赖来源，不另扩为一个业务整合项目。
+- [公众号发布基线](https://github.com/delu543/jasper-projects/tree/0bd40506d1eee0f167638c2006b3efe8d7a2ee36)：`b2d0fc39fb52a93f482da5f6fcebee55e6c09dc9`，MIT；不是该仓库默认分支旧版本。另审阅采用业务工作区的功能增强和发布工作区的安全规则更新。
 - 转录平台的本机课程实现：按职责提取清单/层级/音频优先/串行断点/完整文档，复用已通用化的 ASR。私人接口状态及内容没有复制。
 
 整合前审阅了 [Skills 官方 CLI](https://github.com/vercel-labs/skills) 的按名称安装方式，以及 [uv 环境隔离文档](https://docs.astral.sh/uv/pip/environments/)。本版沿用已有 Python venv 与各服务依赖，避免为整合引入新的包管理运行前提；没有复制这两个项目源码。
@@ -21,3 +21,7 @@
 额外适配：套件 `assemble` 路由、仅 replay doctor 的渲染器检查、独立 Skill 安装/调用命令。
 共享 Word 构建器仅增加连续章节选项，保留课程标题和用户讲义。schema 2 会使旧 ASR 缓存失效但不删除；
 Word builder 摘要变化会拒绝覆盖旧输出，需使用新候选路径并重新验收。原项目与其本机数据未迁移。
+
+## 2026-11-02 功能融合
+
+公众号引擎更新到原公开默认分支 `0bd40506d1eee0f167638c2006b3efe8d7a2ee36`，来源可在合集 `history/wechat-public-account-archiver/main` 追溯。只保留一份 `wechat_crawler`，吸收保留缓存、增量正文/覆盖校验与安全恢复。保留套件命名空间、8876 端口、隔离配置、关闭调度和清理预览。数据库连接增加事务结束即关闭，修复回归中发现的延迟 WAL 冲刷。聊天核心保留套件命名空间、课程讲义与共享 Word 适配；没有重复引入另一份聊天引擎。

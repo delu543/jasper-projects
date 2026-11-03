@@ -11,7 +11,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 DIRS = {'components', 'services', 'skills', 'scripts', 'requirements', 'docs'}
-FILES = {'.gitignore', 'AGENTS.md', 'README.md', 'LICENSE.md', 'wechat_ai.py',
+FILES = {'.gitignore', 'AGENTS.md', 'CLAUDE.md', 'README.md', 'LICENSE.md', 'wechat_ai.py',
          'sources.lock.json', 'source-files.json'}
 FORBIDDEN_PARTS = {'work', '.codex', '.git', '.build', '.venv', '__pycache__', 'tests', 'node_modules'}
 FORBIDDEN_SUFFIXES = {'.pyc', '.sqlite', '.db', '.docx', '.mp3', '.mp4', '.m4a', '.wav',
@@ -62,8 +62,11 @@ def check():
         for link in re.findall(r'\]\(([^)]+)\)', text):
             if not link.startswith(('http', '#')) and not (path.parent/link).is_file():
                 errors.append(f'broken_skill_reference:{path.parent.name}:{link}')
-    if (ROOT/'.git').exists():
-        tracked = subprocess.check_output(['git', 'ls-files', '-z'], cwd=ROOT).decode().split('\0')
+    inside_git = subprocess.run(['git', 'rev-parse', '--is-inside-work-tree'], cwd=ROOT,
+                                text=True, capture_output=True)
+    if inside_git.returncode == 0:
+        # Also enforce the contract when this project is a monorepo subdirectory.
+        tracked = subprocess.check_output(['git', 'ls-files', '-z', '--', '.'], cwd=ROOT).decode().split('\0')
         allowed = {str(p.relative_to(ROOT)) for p in files}
         errors.extend('tracked_outside_public_contract:'+p for p in tracked if p and p not in allowed)
     manifest = ROOT/'source-files.json'

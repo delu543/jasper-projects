@@ -27,7 +27,7 @@ test('code acceptance requires clean current commit and becomes review due after
  const root=await fixture('code');await createProject(root);
  const config=await readConfig(root);let runtime=await collectSnapshot(root,config);
  assert.throws(()=>updateMilestone(config,'build',{status:'accepted'},runtime),/evidence/);
- const accepted=updateMilestone(config,'build',{status:'accepted',evidence:['node --test exit 0']},runtime);
+ const accepted=updateMilestone(config,'build',{status:'accepted',evidence:['node --test exit 0'],environment:'synthetic Node fixture'},runtime);
  assert.equal(milestoneProgress(accepted,runtime.git.head,0).done,1);
  await writeFile(path.join(root,'README.md'),'# changed\n');runtime=await collectSnapshot(root,accepted);
  assert.equal(milestoneProgress(accepted,runtime.git.head,runtime.git.dirtyCount).items.find(x=>x.id==='build').effectiveStatus,'needs_review');
@@ -41,19 +41,19 @@ test('local API validates origin/token and persists only in selected project',as
  const app=await startServer(root,{port:0,logger:()=>{}});const url=`http://127.0.0.1:${app.address.port}`;
  try{
   const snap=await (await fetch(url+'/api/snapshot')).json();assert.equal(snap.project.name,path.basename(root));
-  const payload={id:'scope',patch:{status:'accepted',evidence:['Decision note']}};
+  const payload={expectedRevision:snap.revision,id:'scope',patch:{status:'accepted',evidence:['Decision note']}};
   const denied=await fetch(url+'/api/milestone',{method:'POST',headers:{'Content-Type':'application/json','Origin':url},body:JSON.stringify(payload)});assert.equal(denied.status,403);
   const foreign=await fetch(url+'/api/milestone',{method:'POST',headers:{'Content-Type':'application/json','Origin':'https://other.example','X-Panel-Token':snap.csrf},body:JSON.stringify(payload)});assert.equal(foreign.status,403);
   const accepted=await fetch(url+'/api/milestone',{method:'POST',headers:{'Content-Type':'application/json','Origin':url,'X-Panel-Token':snap.csrf},body:JSON.stringify(payload)});assert.equal(accepted.status,200);
   assert.equal((await accepted.json()).milestones.done,1);
   assert.equal((await readConfig(root)).milestones.find(x=>x.id==='scope').status,'accepted');
   assert.equal((await readConfig(other)).milestones.find(x=>x.id==='scope').status,'planned');
-  const codePayload={id:'build',patch:{status:'accepted',evidence:['node --test exit 0']}};
+  const codePayload={id:'build',patch:{status:'accepted',evidence:['node --test exit 0'],environment:'synthetic Node fixture'}};
   const missingHead=await fetch(url+'/api/milestone',{method:'POST',headers:{'Content-Type':'application/json','Origin':url,'X-Panel-Token':snap.csrf},body:JSON.stringify(codePayload)});assert.equal(missingHead.status,409);
   const expectedHead=snap.runtime.git.head;
   await writeFile(path.join(root,'README.md'),'# server changed\n');
   await run('git',['add','README.md'],{cwd:root});await run('git',['-c','user.name=Test','-c','user.email=test@example.invalid','commit','-m','changed'],{cwd:root});
   const staleHead=await fetch(url+'/api/milestone',{method:'POST',headers:{'Content-Type':'application/json','Origin':url,'X-Panel-Token':snap.csrf},body:JSON.stringify({...codePayload,expectedHead})});assert.equal(staleHead.status,409);
-  const added=await fetch(url+'/api/milestones',{method:'POST',headers:{'Content-Type':'application/json','Origin':url,'X-Panel-Token':snap.csrf},body:JSON.stringify({phase:'midstream',title:'One more real checkpoint'})});assert.equal(added.status,200);assert.equal((await added.json()).milestones.total,9);
+  const added=await fetch(url+'/api/milestones',{method:'POST',headers:{'Content-Type':'application/json','Origin':url,'X-Panel-Token':snap.csrf},body:JSON.stringify({expectedRevision:2,phase:'midstream',title:'One more real checkpoint'})});assert.equal(added.status,200);assert.equal((await added.json()).milestones.total,9);
  }finally{await app.close();}
 });

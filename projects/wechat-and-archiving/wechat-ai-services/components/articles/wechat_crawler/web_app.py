@@ -23,6 +23,7 @@ from .crawler.discoverers.wechat_cache_discoverer import WechatCacheDiscoverer
 from .crawler.discoverers.history_discoverer import (
     HistoryDiscoveryError,
     SESSION_RECOVERY_STEPS,
+    is_history_access_restriction,
     is_session_recovery_error,
     session_recovery_guidance,
 )
@@ -103,6 +104,15 @@ class ArchiveJob:
         self.status = "failed"
         self.phase = "失败"
         self.message = message
+        self.finished_at = time.time()
+
+    def mark_blocked(self, message: str) -> None:
+        self.status = "blocked"
+        self.phase = "微信访问受限"
+        self.message = message
+        self.eta_seconds = None
+        self.recovery_action = "已停止相关请求和自动微信操作；保留断点，正常验证完成后再明确重试。"
+        self.recovery_steps = []
         self.finished_at = time.time()
 
     def mark_needs_session(self, message: str) -> None:
@@ -718,13 +728,14 @@ class ArchiveWebService:
                     )
                     preparation = WechatSessionRefresher().prepare_account(
                         article.account_name,
+                        seed_url=job.input_url,
                         session_fingerprint=session_cache.session_fingerprint,
                         session_timeout_seconds=float(
                             automation_cfg.get("session_ready_timeout_seconds", 15.0)
                         ),
                     )
-                    if not preparation.article_open_attempted:
-                        job.message = f"{job.message}\n自动微信恢复失败：{preparation.message}"
+                    if not preparation.session_verified:
+                        job.message = f"{job.message}\n自动微信恢复未通过验证：{preparation.message}"
                         return
                     job.status = "running"
                     job.phase = "刷新微信会话"
@@ -852,7 +863,9 @@ class ArchiveWebService:
         except HistoryDiscoveryError as exc:
             self.storage.finish_run(run_id, "blocked", notes=str(exc))
             job.warnings.append(f"历史发现暂停：{exc}")
-            if is_session_recovery_error(exc):
+            if is_history_access_restriction(exc):
+                job.mark_blocked(f"历史发现因微信验证或访问限制暂停：{exc}")
+            elif is_session_recovery_error(exc):
                 job.mark_needs_session(session_recovery_guidance(account_name))
             else:
                 job.mark_failed(f"历史发现被暂停：{exc}")

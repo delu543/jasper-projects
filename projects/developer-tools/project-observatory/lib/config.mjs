@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { appendFile, mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
+import { appendFile, mkdir, open, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { normalize, validateProject } from './project.mjs';
 
 const directory = '.project-observatory';
 const run=promisify(execFile);
@@ -21,18 +22,19 @@ export const configPath = (root) => path.join(root, directory, 'project.json');
 export const runtimePath = (root) => path.join(root, directory, 'runtime.json');
 export const defaultMilestones = (language='en') => catalog.map(([id,phase,en,zh,enDescription,zhDescription,scope]) => ({
   id, phase, title:language==='zh'?zh:en, description:language==='zh'?zhDescription:enDescription,
-  acceptance:'', status:'planned', scope, evidence:[], owner:'', reviewedAt:null, reviewedCommit:null, updatedAt:null
+  acceptance:'', status:'planned', scope, evidence:[], owner:'', next:'', environment:'', reviewLevel:'local', reviewedAt:null, reviewedCommit:null, updatedAt:null
 }));
 export function validateConfig(config) {
+  config = normalize(config);
   if (config?.schemaVersion !== 1 || typeof config.projectName !== 'string' || config.projectName.length > 120 || !Array.isArray(config.milestones)) throw new Error('Invalid project configuration');
-  if (config.milestones.length > 80) throw new Error('Too many milestones');
+  if (config.milestones.length > 100) throw new Error('Too many milestones');
   const ids = new Set();
   for (const item of config.milestones) {
     if (!/^[a-zA-Z0-9_-]{1,50}$/.test(item.id) || ids.has(item.id) || !phases.includes(item.phase) || !['planned','active','ready','accepted','blocked'].includes(item.status) || !['code','decision'].includes(item.scope)) throw new Error(`Invalid milestone ${item.id}`);
-    if (typeof item.title !== 'string' || item.title.length > 140 || typeof item.description !== 'string' || item.description.length > 1000 || typeof item.acceptance !== 'string' || item.acceptance.length > 1200 || !Array.isArray(item.evidence) || item.evidence.length > 12 || item.evidence.some(x=>typeof x!=='string'||x.length>500)) throw new Error(`Invalid milestone content ${item.id}`);
+    if (typeof item.title !== 'string' || item.title.length > 160 || typeof item.description !== 'string' || item.description.length > 4000 || typeof item.acceptance !== 'string' || item.acceptance.length > 4000 || !Array.isArray(item.evidence) || item.evidence.length > 20 || item.evidence.some(x=>typeof x!=='string'||x.length>1000)) throw new Error(`Invalid milestone content ${item.id}`);
     ids.add(item.id);
   }
-  return config;
+  return validateProject(config);
 }
 export async function atomicJson(filename, value) {
   await mkdir(path.dirname(filename), {recursive:true});
@@ -41,12 +43,15 @@ export async function atomicJson(filename, value) {
   await rename(temp,filename);
 }
 export async function readConfig(root) { return validateConfig(JSON.parse(await readFile(configPath(root),'utf8'))); }
-export async function createProject(root, {language='en',name}={}) {
+export async function createProject(root, {language='en',name,initialConfig}={}) {
+  await mkdir(path.dirname(configPath(root)),{recursive:true});
+  const lock = await open(configPath(root)+'.lock','wx',0o600);
+  try {
   const existing=await stat(configPath(root)).then(()=>true,()=>false);
   if(existing) return {created:false,config:await readConfig(root)};
   let packageName;
   try {const pkg=JSON.parse(await readFile(path.join(root,'package.json'),'utf8'));packageName=pkg.displayName||pkg.name;} catch {}
-  const config={schemaVersion:1,projectName:String(name||packageName||path.basename(root)).slice(0,120),language:language==='zh'?'zh':'en',createdAt:new Date().toISOString(),milestones:defaultMilestones(language),reviewLog:[],integrations:{codex:false,github:false}};
+  const config=validateConfig(initialConfig || {schemaVersion:1,revision:1,projectName:String(name||packageName||path.basename(root)).slice(0,120),language:language==='zh'?'zh':'en',createdAt:new Date().toISOString(),milestones:defaultMilestones(language),reviewLog:[],integrations:{codex:false,github:false}});
   await atomicJson(configPath(root),config);
   // The local Git exclude avoids making a fresh checkout dirty during init.
   let ignore;
@@ -56,11 +61,12 @@ export async function createProject(root, {language='en',name}={}) {
   if(!existingIgnore.split(/\r?\n/).includes('.project-observatory/'))
     await appendFile(ignore,`${existingIgnore&&!existingIgnore.endsWith('\n')?'\n':''}.project-observatory/\n`);
   return {created:true,config};
+  } finally { await lock.close(); await unlink(configPath(root)+'.lock'); }
 }
-export function milestoneProgress(config, currentHead, dirtyCount=0) {
+export function milestoneProgress(config, currentHead, dirtyCount=0, gitStale=false) {
   const unique=new Map(config.milestones.map(x=>[x.id,x]));
   const items=[...unique.values()].map(item=>{
-    const stale=item.status==='accepted'&&item.scope==='code'&&(!currentHead||item.reviewedCommit!==currentHead||dirtyCount>0);
+    const stale=item.status==='accepted'&&item.scope==='code'&&(!currentHead||item.reviewedCommit!==currentHead||dirtyCount>0||gitStale||!item.environment?.trim());
     const accepted=item.status==='accepted'&&!stale&&item.evidence.length>0&&Boolean(item.reviewedAt);
     return {...item,effectiveStatus:stale?'needs_review':item.status,accepted,stale};
   });
@@ -72,11 +78,12 @@ export function updateMilestone(config, id, patch, runtime) {
   if(index<0) throw Object.assign(new Error('Unknown milestone'),{statusCode:404});
   const old=config.milestones[index];
   const item={...old};
-  for(const key of ['title','description','acceptance','owner','status']) if(key in patch) item[key]=patch[key];
+  for(const key of ['title','description','acceptance','owner','status','next','environment','reviewLevel']) if(key in patch) item[key]=patch[key];
   if('evidence' in patch)item.evidence=patch.evidence;
   if(item.status==='accepted') {
     if(!item.evidence.length) throw Object.assign(new Error('Acceptance needs evidence'),{statusCode:400});
     if(item.scope==='code'&&(!runtime.git?.head||runtime.git?.dirtyCount>0||runtime.git?.stale)) throw Object.assign(new Error('Code acceptance needs a clean Git commit'),{statusCode:409});
+    if(item.scope==='code'&&!item.environment?.trim()) throw Object.assign(new Error('Code acceptance needs a verification environment'),{statusCode:400});
     item.reviewedAt=new Date().toISOString();item.reviewedCommit=item.scope==='code'?runtime.git.head:null;
   } else if(old.status==='accepted'&&item.status!=='accepted') {item.reviewedAt=null;item.reviewedCommit=null;}
   item.updatedAt=new Date().toISOString();
@@ -90,6 +97,6 @@ export function addMilestone(config, patch) {
   const phase=String(patch.phase||'');
   if(!title||title.length>140||!phases.includes(phase))throw Object.assign(new Error('A title and valid phase are required'),{statusCode:400});
   const now=new Date().toISOString();
-  const item={id:`m-${randomUUID().slice(0,8)}`,phase,title,description:String(patch.description||'').slice(0,1000),acceptance:String(patch.acceptance||'').slice(0,1200),status:'planned',scope:patch.scope==='decision'?'decision':'code',evidence:[],owner:'',reviewedAt:null,reviewedCommit:null,updatedAt:now};
+  const item={id:`m-${randomUUID().slice(0,8)}`,phase,title,description:String(patch.description||'').slice(0,1000),acceptance:String(patch.acceptance||'').slice(0,1200),status:'planned',scope:patch.scope==='decision'?'decision':'code',evidence:[],owner:String(patch.owner||''),next:String(patch.next||''),environment:String(patch.environment||''),reviewLevel:patch.reviewLevel||'local',reviewedAt:null,reviewedCommit:null,updatedAt:now};
   const next=structuredClone(config);next.milestones.push(item);return validateConfig(next);
 }

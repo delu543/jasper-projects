@@ -7,10 +7,11 @@ import platform
 import shutil
 import subprocess
 import sys
+from services.catalog import capabilities
 
 ROOT = Path(__file__).resolve().parents[1]
 REPLAY = ROOT / 'components/chat/portable_skill/skills/wechat-replay-word/scripts'
-SERVICES = ('chat', 'media', 'articles', 'replay', 'courses')
+SERVICES = tuple(item['id'] for item in capabilities()['services'])
 
 
 def home():

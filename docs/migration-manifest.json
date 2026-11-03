@@ -16,6 +16,28 @@
         "target": "refs/heads/history/ai-video-production/main",
         "sha": "d4bdf05e4d6cd1b4e9654dc824c3586cfdd5ef01"
       }
+    ],
+    "original_sources": [
+      {
+        "id": 1398491756,
+        "name": "ai-video-production",
+        "full_name": "delu543/ai-video-production",
+        "default_branch": "main",
+        "clone_url": "https://github.com/delu543/ai-video-production.git",
+        "visibility": "public",
+        "source_commit": "d4bdf05e4d6cd1b4e9654dc824c3586cfdd5ef01",
+        "source_tree": "667304651bebe5f8afbebc105dd3793ea2873da8",
+        "import_commit": "c2416b0604b722e090e22e63d7d30fc714a2c407",
+        "refs": [
+          {
+            "source": "refs/heads/main",
+            "target": "refs/heads/history/ai-video-production/main",
+            "sha": "d4bdf05e4d6cd1b4e9654dc824c3586cfdd5ef01"
+          }
+        ],
+        "historical_path": "projects/content-creation/ai-video-production",
+        "historical_branch": "history/ai-video-production/main"
+      }
     ]
   },
   {
@@ -34,6 +56,28 @@
         "source": "refs/heads/main",
         "target": "refs/heads/history/claude-residential-ip-rules/main",
         "sha": "b7cddaf6ddba1e233a7045ed57eb1b0a7c08a784"
+      }
+    ],
+    "original_sources": [
+      {
+        "id": 1438353204,
+        "name": "claude-residential-ip-rules",
+        "full_name": "delu543/claude-residential-ip-rules",
+        "default_branch": "main",
+        "clone_url": "https://github.com/delu543/claude-residential-ip-rules.git",
+        "visibility": "public",
+        "source_commit": "b7cddaf6ddba1e233a7045ed57eb1b0a7c08a784",
+        "source_tree": "7bbb4fc71f9218a771d886fa479b8b269c958700",
+        "import_commit": "7746923b57dd42928c557ba5fdfc01762cc4d23f",
+        "refs": [
+          {
+            "source": "refs/heads/main",
+            "target": "refs/heads/history/claude-residential-ip-rules/main",
+            "sha": "b7cddaf6ddba1e233a7045ed57eb1b0a7c08a784"
+          }
+        ],
+        "historical_path": "projects/networking/claude-residential-ip-rules",
+        "historical_branch": "history/claude-residential-ip-rules/main"
       }
     ]
   },
@@ -69,6 +113,43 @@
         "target": "refs/tags/digital-human-workflow/v0.2.1",
         "sha": "648ea87562eadf733651adb7339056b8128ccc6c"
       }
+    ],
+    "original_sources": [
+      {
+        "id": 1376739373,
+        "name": "digital-human-workflow",
+        "full_name": "delu543/digital-human-workflow",
+        "default_branch": "codex/initial-release",
+        "clone_url": "https://github.com/delu543/digital-human-workflow.git",
+        "visibility": "public",
+        "source_commit": "c304c12c2a4f3e442ecb44a5f583fac40c72b509",
+        "source_tree": "99d4edf754bf50351eda54020dbcb8cb2871900f",
+        "import_commit": "8cc7823239e83e7bcb00606c79b3d2b7fc015596",
+        "refs": [
+          {
+            "source": "refs/heads/codex/initial-release",
+            "target": "refs/heads/history/digital-human-workflow/codex/initial-release",
+            "sha": "c304c12c2a4f3e442ecb44a5f583fac40c72b509"
+          },
+          {
+            "source": "refs/heads/main",
+            "target": "refs/heads/history/digital-human-workflow/main",
+            "sha": "9431858b5eccd79b4f0d9cc3601937821a7a7ce3"
+          },
+          {
+            "source": "refs/tags/v0.2.0",
+            "target": "refs/tags/digital-human-workflow/v0.2.0",
+            "sha": "6226161bc33cc16591bcf528bcc4a7a4b6505d96"
+          },
+          {
+            "source": "refs/tags/v0.2.1",
+            "target": "refs/tags/digital-human-workflow/v0.2.1",
+            "sha": "648ea87562eadf733651adb7339056b8128ccc6c"
+          }
+        ],
+        "historical_path": "projects/content-creation/digital-human-workflow",
+        "historical_branch": "history/digital-human-workflow/codex/initial-release"
+      }
     ]
   },
   {
@@ -80,7 +161,6 @@
     "visibility": "public",
     "path": "projects/developer-tools/project-observatory",
     "source_commit": "35555b15b7a7c63b09e7501998d8daffff269186",
-    "source_tree": "695f0974c79a56f8865e396a3fcb9b741999f722",
     "import_commit": "c9b9ce117b4414742b76ebf80f3534174d2d880d",
     "refs": [
       {
@@ -88,26 +168,51 @@
         "target": "refs/heads/history/project-observatory/main",
         "sha": "35555b15b7a7c63b09e7501998d8daffff269186"
       }
-    ]
-  },
-  {
-    "id": 1394477766,
-    "name": "project-progress-observatory",
-    "full_name": "delu543/project-progress-observatory",
-    "default_branch": "main",
-    "clone_url": "https://github.com/delu543/project-progress-observatory.git",
-    "visibility": "public",
-    "path": "projects/developer-tools/project-progress-observatory",
-    "source_commit": "ff6f7a7370a48fe4050e9db60e60483ccf19c893",
-    "source_tree": "a5d518f8f51934579cd2e4186f019f7015aad12e",
-    "import_commit": "352d7942d6b424319268fd0c9c3267dd4e6a0f84",
-    "refs": [
+    ],
+    "original_sources": [
       {
-        "source": "refs/heads/main",
-        "target": "refs/heads/history/project-progress-observatory/main",
-        "sha": "ff6f7a7370a48fe4050e9db60e60483ccf19c893"
+        "id": 1393294233,
+        "name": "project-observatory",
+        "full_name": "delu543/project-observatory",
+        "default_branch": "main",
+        "clone_url": "https://github.com/delu543/project-observatory.git",
+        "visibility": "public",
+        "source_commit": "35555b15b7a7c63b09e7501998d8daffff269186",
+        "source_tree": "695f0974c79a56f8865e396a3fcb9b741999f722",
+        "import_commit": "c9b9ce117b4414742b76ebf80f3534174d2d880d",
+        "refs": [
+          {
+            "source": "refs/heads/main",
+            "target": "refs/heads/history/project-observatory/main",
+            "sha": "35555b15b7a7c63b09e7501998d8daffff269186"
+          }
+        ],
+        "historical_path": "projects/developer-tools/project-observatory",
+        "historical_branch": "history/project-observatory/main"
+      },
+      {
+        "id": 1394477766,
+        "name": "project-progress-observatory",
+        "full_name": "delu543/project-progress-observatory",
+        "default_branch": "main",
+        "clone_url": "https://github.com/delu543/project-progress-observatory.git",
+        "visibility": "public",
+        "source_commit": "ff6f7a7370a48fe4050e9db60e60483ccf19c893",
+        "source_tree": "a5d518f8f51934579cd2e4186f019f7015aad12e",
+        "import_commit": "352d7942d6b424319268fd0c9c3267dd4e6a0f84",
+        "refs": [
+          {
+            "source": "refs/heads/main",
+            "target": "refs/heads/history/project-progress-observatory/main",
+            "sha": "ff6f7a7370a48fe4050e9db60e60483ccf19c893"
+          }
+        ],
+        "historical_path": "projects/developer-tools/project-progress-observatory",
+        "historical_branch": "history/project-progress-observatory/main"
       }
-    ]
+    ],
+    "baseline_tree": "695f0974c79a56f8865e396a3fcb9b741999f722",
+    "implementation": "integrated; current main supersedes source snapshots"
   },
   {
     "id": 1391105969,
@@ -118,7 +223,6 @@
     "visibility": "public",
     "path": "projects/wechat-and-archiving/wechat-ai-services",
     "source_commit": "5ecafff2a5f0ae3ed1f50af34c9b4adb0a2870e4",
-    "source_tree": "c015acd0100423f5d7d9f5fe1ca8259b378b7d2b",
     "import_commit": "4d423dfa72caa28d3e50b90705dca74c795014a3",
     "refs": [
       {
@@ -126,70 +230,96 @@
         "target": "refs/heads/history/wechat-ai-services/main",
         "sha": "5ecafff2a5f0ae3ed1f50af34c9b4adb0a2870e4"
       }
-    ]
-  },
-  {
-    "id": 1310721125,
-    "name": "wechat-data-extraction",
-    "full_name": "delu543/wechat-data-extraction",
-    "default_branch": "main",
-    "clone_url": "https://github.com/delu543/wechat-data-extraction.git",
-    "visibility": "public",
-    "path": "projects/wechat-and-archiving/wechat-data-extraction",
-    "source_commit": "1c340a063837c7ea7981b55dbdf93c684ae13903",
-    "source_tree": "e9a54ab209e1d7d7517592448bdd4b28da267e52",
-    "import_commit": "9174f6058b66671b28de247be3bcd2b4b0bc86bd",
-    "refs": [
+    ],
+    "original_sources": [
       {
-        "source": "refs/heads/main",
-        "target": "refs/heads/history/wechat-data-extraction/main",
-        "sha": "1c340a063837c7ea7981b55dbdf93c684ae13903"
+        "id": 1391105969,
+        "name": "wechat-ai-services",
+        "full_name": "delu543/wechat-ai-services",
+        "default_branch": "main",
+        "clone_url": "https://github.com/delu543/wechat-ai-services.git",
+        "visibility": "public",
+        "source_commit": "5ecafff2a5f0ae3ed1f50af34c9b4adb0a2870e4",
+        "source_tree": "c015acd0100423f5d7d9f5fe1ca8259b378b7d2b",
+        "import_commit": "4d423dfa72caa28d3e50b90705dca74c795014a3",
+        "refs": [
+          {
+            "source": "refs/heads/main",
+            "target": "refs/heads/history/wechat-ai-services/main",
+            "sha": "5ecafff2a5f0ae3ed1f50af34c9b4adb0a2870e4"
+          }
+        ],
+        "historical_path": "projects/wechat-and-archiving/wechat-ai-services",
+        "historical_branch": "history/wechat-ai-services/main"
       },
       {
-        "source": "refs/heads/windows-source-preview",
-        "target": "refs/heads/history/wechat-data-extraction/windows-source-preview",
-        "sha": "6b1fc81bdf4634933feba3084ceb87e7d294448f"
+        "id": 1310721125,
+        "name": "wechat-data-extraction",
+        "full_name": "delu543/wechat-data-extraction",
+        "default_branch": "main",
+        "clone_url": "https://github.com/delu543/wechat-data-extraction.git",
+        "visibility": "public",
+        "source_commit": "1c340a063837c7ea7981b55dbdf93c684ae13903",
+        "source_tree": "e9a54ab209e1d7d7517592448bdd4b28da267e52",
+        "import_commit": "9174f6058b66671b28de247be3bcd2b4b0bc86bd",
+        "refs": [
+          {
+            "source": "refs/heads/main",
+            "target": "refs/heads/history/wechat-data-extraction/main",
+            "sha": "1c340a063837c7ea7981b55dbdf93c684ae13903"
+          },
+          {
+            "source": "refs/heads/windows-source-preview",
+            "target": "refs/heads/history/wechat-data-extraction/windows-source-preview",
+            "sha": "6b1fc81bdf4634933feba3084ceb87e7d294448f"
+          },
+          {
+            "source": "refs/tags/v0.2.0-dev.7",
+            "target": "refs/tags/wechat-data-extraction/v0.2.0-dev.7",
+            "sha": "6447d8cfdd99e7290a195cfd004d181492a96699"
+          }
+        ],
+        "historical_path": "projects/wechat-and-archiving/wechat-data-extraction",
+        "historical_branch": "history/wechat-data-extraction/main"
       },
       {
-        "source": "refs/tags/v0.2.0-dev.7",
-        "target": "refs/tags/wechat-data-extraction/v0.2.0-dev.7",
-        "sha": "6447d8cfdd99e7290a195cfd004d181492a96699"
+        "id": 1310721998,
+        "name": "wechat-public-account-archiver",
+        "full_name": "delu543/wechat-public-account-archiver",
+        "default_branch": "main",
+        "clone_url": "https://github.com/delu543/wechat-public-account-archiver.git",
+        "visibility": "public",
+        "source_commit": "0bd40506d1eee0f167638c2006b3efe8d7a2ee36",
+        "source_tree": "23a671ab386d7b722e47f488e86af14265735b2e",
+        "import_commit": "8dcea63d8f41c0c599a83adda78c7ce189fc7741",
+        "refs": [
+          {
+            "source": "refs/heads/codex/passive-cache-update-20261028",
+            "target": "refs/heads/history/wechat-public-account-archiver/codex/passive-cache-update-20261028",
+            "sha": "0bd40506d1eee0f167638c2006b3efe8d7a2ee36"
+          },
+          {
+            "source": "refs/heads/codex/wechat-incremental-recovery-optimizations",
+            "target": "refs/heads/history/wechat-public-account-archiver/codex/wechat-incremental-recovery-optimizations",
+            "sha": "feee2006e988ccabe2482709b330d00a9197b790"
+          },
+          {
+            "source": "refs/heads/codex/wechat-subscription-skill",
+            "target": "refs/heads/history/wechat-public-account-archiver/codex/wechat-subscription-skill",
+            "sha": "b2d0fc39fb52a93f482da5f6fcebee55e6c09dc9"
+          },
+          {
+            "source": "refs/heads/main",
+            "target": "refs/heads/history/wechat-public-account-archiver/main",
+            "sha": "0bd40506d1eee0f167638c2006b3efe8d7a2ee36"
+          }
+        ],
+        "historical_path": "projects/wechat-and-archiving/wechat-public-account-archiver",
+        "historical_branch": "history/wechat-public-account-archiver/main"
       }
-    ]
-  },
-  {
-    "id": 1310721998,
-    "name": "wechat-public-account-archiver",
-    "full_name": "delu543/wechat-public-account-archiver",
-    "default_branch": "main",
-    "clone_url": "https://github.com/delu543/wechat-public-account-archiver.git",
-    "visibility": "public",
-    "path": "projects/wechat-and-archiving/wechat-public-account-archiver",
-    "source_commit": "0bd40506d1eee0f167638c2006b3efe8d7a2ee36",
-    "source_tree": "23a671ab386d7b722e47f488e86af14265735b2e",
-    "import_commit": "8dcea63d8f41c0c599a83adda78c7ce189fc7741",
-    "refs": [
-      {
-        "source": "refs/heads/codex/passive-cache-update-20261028",
-        "target": "refs/heads/history/wechat-public-account-archiver/codex/passive-cache-update-20261028",
-        "sha": "0bd40506d1eee0f167638c2006b3efe8d7a2ee36"
-      },
-      {
-        "source": "refs/heads/codex/wechat-incremental-recovery-optimizations",
-        "target": "refs/heads/history/wechat-public-account-archiver/codex/wechat-incremental-recovery-optimizations",
-        "sha": "feee2006e988ccabe2482709b330d00a9197b790"
-      },
-      {
-        "source": "refs/heads/codex/wechat-subscription-skill",
-        "target": "refs/heads/history/wechat-public-account-archiver/codex/wechat-subscription-skill",
-        "sha": "b2d0fc39fb52a93f482da5f6fcebee55e6c09dc9"
-      },
-      {
-        "source": "refs/heads/main",
-        "target": "refs/heads/history/wechat-public-account-archiver/main",
-        "sha": "0bd40506d1eee0f167638c2006b3efe8d7a2ee36"
-      }
-    ]
+    ],
+    "baseline_tree": "c015acd0100423f5d7d9f5fe1ca8259b378b7d2b",
+    "implementation": "integrated; current main supersedes source snapshots"
   },
   {
     "id": 1318418391,
@@ -227,6 +357,48 @@
         "source": "refs/tags/v0.5.0",
         "target": "refs/tags/weixin-replay-to-mp3/v0.5.0",
         "sha": "81ce8a926bf5f73821b45cdf5108be6f6e5c1ae2"
+      }
+    ],
+    "original_sources": [
+      {
+        "id": 1318418391,
+        "name": "weixin-replay-to-mp3",
+        "full_name": "delu543/weixin-replay-to-mp3",
+        "default_branch": "main",
+        "clone_url": "https://github.com/delu543/weixin-replay-to-mp3.git",
+        "visibility": "public",
+        "source_commit": "4cec3daecf67d65ec10eb5f1ef0c86783efbe514",
+        "source_tree": "452dca04ec690d12ac8261974cee5585ff0f98ca",
+        "import_commit": "44a562ef9c6eafce714d21206004084564252bf8",
+        "refs": [
+          {
+            "source": "refs/heads/main",
+            "target": "refs/heads/history/weixin-replay-to-mp3/main",
+            "sha": "4cec3daecf67d65ec10eb5f1ef0c86783efbe514"
+          },
+          {
+            "source": "refs/tags/v0.4.0",
+            "target": "refs/tags/weixin-replay-to-mp3/v0.4.0",
+            "sha": "312e89eabfeeb7810c38c7c451f76997c9be4dc3"
+          },
+          {
+            "source": "refs/tags/v0.4.1",
+            "target": "refs/tags/weixin-replay-to-mp3/v0.4.1",
+            "sha": "61dcb95f54037228935612c1aa6832877e5953a9"
+          },
+          {
+            "source": "refs/tags/v0.4.2",
+            "target": "refs/tags/weixin-replay-to-mp3/v0.4.2",
+            "sha": "6beeae62ab7c709f4a5129045676343883f016bf"
+          },
+          {
+            "source": "refs/tags/v0.5.0",
+            "target": "refs/tags/weixin-replay-to-mp3/v0.5.0",
+            "sha": "81ce8a926bf5f73821b45cdf5108be6f6e5c1ae2"
+          }
+        ],
+        "historical_path": "projects/wechat-and-archiving/weixin-replay-to-mp3",
+        "historical_branch": "history/weixin-replay-to-mp3/main"
       }
     ]
   }

@@ -1,41 +1,7 @@
-# Codex Project Guide
+# 微信 AI 服务的公众号引擎
 
-This repository installs a local macOS WeChat Official Account archiver.
+这是统一套件的唯一公众号实现。用户入口、配置和安装由上层 `AGENTS.md`、`services/article_entry.py` 与 `skills/COMMON.md` 管理；不要运行独立旧安装器。
 
-## First Run
+默认先检查保留缓存。空缓存不代表授权启用调度、前台恢复、密钥初始化或读取旧库。正文、覆盖和交付回执分别核验。未知缺口保持可见；访问限制暂停共享会话请求。
 
-When the user asks to install or start the project:
-
-1. Read `README.md` and `.agents/skills/wechat-public-account-history/SKILL.md`.
-2. Run `./install.sh --check`.
-3. If preflight succeeds, run `./install.sh`.
-4. Verify `http://127.0.0.1:8876/api/health`.
-5. Report the local controller and Word output paths.
-
-Do not run installation solely because the repository was opened. The user must
-ask to install or start it.
-
-## Development
-
-- Run tests with `.venv/bin/python -m pytest -q`.
-- Keep macOS automation, local website, incremental Word output, deduplication,
-  session recovery, and cleanup behavior regression-tested.
-- Preserve the stable `WeChatAIServicesArticleStatus.app` identity during upgrades.
-- Keep the web service bound to `127.0.0.1` unless the user explicitly changes it.
-
-## Data Boundaries
-
-- Never commit `data/`, `output/`, `logs/`, SQLite files, Word files, raw article
-  corpora, WeChat cache, signed URLs, or session credentials.
-- Use only public content and the user's normal visible WeChat session.
-- Pause the affected source and dependent steps on CAPTCHA, login, paywall, rate limit or access restriction; record the reason and continue independent authorized work. A shared session/platform restriction pauses all affected requests; do not switch identities or routes to evade it.
-- Do not disable the user's VPN or weaken macOS privacy controls.
-
-## Release Gate
-
-Before publishing:
-
-1. Run the full test suite.
-2. Run `./install.sh --check`.
-3. Scan tracked files for secrets and absolute user paths.
-4. Confirm generated and local runtime data remain ignored.
+只使用合成数据开发，不读取真实微信或账号。测试保存在本地 work；发布运行套件 public_check，核对来源与源码摘要。原 macOS 会话、平台边界、许可及第三方声明继续有效。
