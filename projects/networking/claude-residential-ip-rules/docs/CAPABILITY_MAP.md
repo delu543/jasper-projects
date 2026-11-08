@@ -2,7 +2,7 @@
 
 ## 2026-11-07 合并仓库维护增量
 
-- changed：当前安装/提示词指向 jasper-projects/main 的项目子目录，历史分支不再作为安装通道；根目录 workflow 接管 Windows/macOS/Linux 回归。
+- changed：当前安装/提示词指向 jasper-projects/main 的项目子目录，历史分支不再作为安装通道；根目录 workflow 定义 Windows/macOS/Linux 回归（仓库启用 Actions 后运行，本次发布时总开关关闭）。
 - active：macOS 真实存在的桌面内置 Claude Code 根目录纳入共享发现函数，供通用草稿和旧初始化使用；版本升级路径、目录边界及 Windows 原有盘点分派有回归测试。
 - retained：固定单节点/无自动备用、普通池美国优先及其他地区备用、DNS/WebRTC、Windows/手机适配和回滚逻辑保持；不扩大为共享 Node/Python 进程规则，不增加 LuLu 依赖。
 - active：真实隔离 Mihomo 的两条持续 CONNECT 流跨 force=false 热加载回归；不操作生产内核，不作为所有客户端零中断的保证。
