@@ -98,11 +98,13 @@ Codex 或 Claude 使用 `context --project <绝对路径>` 读取同一份上下
 识别本机环境，按 Claude、普通外网和直连用途生成分流方案，提供检查与回滚工具。
 
 ```sh
-git clone --single-branch --branch history/claude-residential-ip-rules/main https://github.com/delu543/jasper-projects.git claude-residential-ip-rules
-cd claude-residential-ip-rules
+git clone --filter=blob:none --sparse --single-branch --branch main https://github.com/delu543/jasper-projects.git jasper-network-rules
+cd jasper-network-rules
+git sparse-checkout set projects/networking/claude-residential-ip-rules
+cd projects/networking/claude-residential-ip-rules
 ```
 
-先查能力与目标环境；网络方案应用、手机导入和实机验收是后续独立步骤。
+此项目维护在 `main` 的上述子目录；`history/claude-residential-ip-rules/main` 只保留旧版来源。已有合集 checkout 直接进入该子目录，不覆盖本地未提交工作。先查能力与目标环境；网络方案应用、手机导入和实机验收是后续独立步骤。以下 Python 可执行名按本机使用 `python3`、`python` 或 `py`。
 
 ```sh
 python3 scripts/universal.py capabilities

@@ -12,6 +12,8 @@
 
 先读 README.md、docs/UNIVERSAL.md、docs/UNIVERSAL-PROMPT.md 和 docs/LEAK-PROTECTION.md。只操作用户授权的目标设备。先检测 OS、客户端/真实内核、浏览器及任意数量来源，再选择适配器；不能预设两订阅、住宅套餐、Verge或小火箭。Claude 固定单个获准代理，普通流量只用获准普通池，两种角色不能互为备用。共享同一来源时明确 mixed 并选不同节点；同一入口不得加入普通池。不要承诺住宅纯净、独享或不封号。旧 chatgptResidential 仅兼容显式 opt-in，不是新用户默认。
 
+当前维护源为 jasper-projects/main 的本目录；先读根 AGENTS.md，命令在本子目录运行，不能从 history/* 安装。维护现有部署先读 docs/MAINTENANCE.md，重新发现并比较 Desktop/内置 Code/独立 Code 路径；不覆盖现有角色、节点或地区选择。Mac 已存在的 claude-code 根目录覆盖后续版本目录；Windows 使用实际路径，不能跨设备照抄。补路径不会让任意子进程获得强隔离。
+
 Windows + iPhone 请求先执行 docs/WINDOWS-IPHONE-PREPARATION.md，软件/依赖缺失时不能直接运行依赖它们的Python工具。先盘点当前联网与权限；已获配置授权时自动复用/安装缺少的必要组件到适当独立环境，核实来源和结果，不只输出待安装清单。已有软件不一律升级或重装，不擅自重启/切网络/占住宅下载流量。UAC、信任、VPN、登录、付费或无界面能力等真实外部门槛才提示本人，记录.private进度，确认后重新检查并继续后续配置，不重跑已成功步骤。安装/准备成功不等于设备网络已验收。
 
 ## 必须遵循的实施顺序

@@ -141,7 +141,14 @@ def discover_paths():
                     claude.append(str(app) + '/')
             except (OSError, ValueError):
                 continue
-    claude += [str(p) + '/' for p in (home / '.local/share/claude/versions', home / 'Library/Caches/com.anthropic.claudefordesktop.ShipIt') if p.is_dir()]
+    # Desktop's embedded Code binary lives outside Claude.app. Match the
+    # observed installation root so versioned updates stay covered, without
+    # matching every shared node/python executable or another user's files.
+    claude += [str(p) + '/' for p in (
+        home / '.local/share/claude/versions',
+        home / 'Library/Application Support/Claude/claude-code',
+        home / 'Library/Caches/com.anthropic.claudefordesktop.ShipIt',
+    ) if p.is_dir()]
     code = home / '.local/bin/claude'
     if code.is_file(): claude.append(str(code.resolve()))
     return sorted(set(claude)), sorted(set(codex))

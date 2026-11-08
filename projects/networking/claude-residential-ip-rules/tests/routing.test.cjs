@@ -84,6 +84,25 @@ test('Windows paths escape backslashes, exact exe boundaries and case insensitiv
   assert.ok(processRule.includes('(?i)'));assert.ok(processRule.includes('Claude\\.exe$'));
   assert.ok(!r.rules.join('\n').includes('PROCESS-NAME,node.exe'));
 });
+test('embedded Code updates retain TCP pinning and UDP rejection without broadening other apps', () => {
+  const {c,o}=fixture();
+  const root='/Users/example.+/Library/Application Support/Claude/claude-code/';
+  o.claudePaths.push(root);
+  const rules=build(c,o).rules;
+  const udpPrefix='AND,((NETWORK,udp),(PROCESS-PATH-REGEX,';
+  const udp=rules.find(r=>r.startsWith(udpPrefix));
+  const tcpPrefix='AND,((PROCESS-PATH-REGEX,';
+  const tcp=rules.find(r=>r.startsWith(tcpPrefix));
+  const pattern=udp.slice(udpPrefix.length,-')),REJECT'.length);
+  assert.equal(tcp.slice(tcpPrefix.length).split('),(NOT,')[0],pattern);
+  assert.ok(tcp.endsWith(',Claude 固定出口'));
+  const matches=new RegExp(pattern);
+  for(const version of ['version-one','version-two']) assert.ok(matches.test(root+version+'/claude'));
+  for(const path of [root.slice(0,-1)+'-other/claude', root.replace('example.+','exampleXX')+'v/claude',
+    '/Applications/Codex.app/Contents/MacOS/Codex','/usr/local/bin/node','/usr/bin/python3']) {
+    assert.ok(!matches.test(path),path);
+  }
+});
 test('Windows scripts never force TUN on; strict DNS is separate opt-in',()=>{
   const {c,o}=fixture();o.platform='win32';assert.equal(build(c,o).tun.enable,false);
   o.windowsTun=true;assert.equal(build(c,o).tun.enable,false);

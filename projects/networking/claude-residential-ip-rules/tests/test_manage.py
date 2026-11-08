@@ -12,6 +12,34 @@ import manage
 import clients
 
 class SafetyTests(unittest.TestCase):
+    def test_mac_embedded_code_discovery_survives_version_changes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / 'test user'
+            embedded = home / 'Library/Application Support/Claude/claude-code'
+            embedded.mkdir(parents=True)
+            (embedded / 'version-one').mkdir()
+            with patch.object(manage.sys, 'platform', 'darwin'), patch.object(manage.Path, 'home', return_value=home):
+                before, _ = manage.discover_paths()
+                (embedded / 'version-two').mkdir()
+                after, _ = manage.discover_paths()
+            self.assertIn(str(embedded) + '/', before)
+            self.assertEqual(before, after)
+            self.assertNotIn(str(home) + '/', before)
+            self.assertFalse(any('version-one' in p or 'version-two' in p for p in before))
+
+    def test_absent_embedded_code_is_not_invented(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            with patch.object(manage.sys, 'platform', 'darwin'), patch.object(manage.Path, 'home', return_value=home):
+                paths, _ = manage.discover_paths()
+            self.assertFalse(any('/Library/Application Support/Claude/claude-code/' in p for p in paths))
+
+    def test_windows_discovery_keeps_native_inventory(self):
+        observed = ([r'C:\Users\example\Claude\Claude.exe'], [])
+        with patch.object(manage.sys, 'platform', 'win32'), patch.object(manage, 'windows_paths', return_value=observed) as inventory:
+            self.assertEqual(manage.discover_paths(), observed)
+            inventory.assert_called_once_with()
+
     def test_private_write_mode(self):
         with tempfile.TemporaryDirectory() as tmp:
             p=Path(tmp)/'settings.json';manage.save(p,'{}')

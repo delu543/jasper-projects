@@ -4,6 +4,8 @@
 
 入口：[完整通用提示词](docs/UNIVERSAL-PROMPT.md) · [通用实施流程](docs/UNIVERSAL.md) · [DNS / WebRTC](docs/LEAK-PROTECTION.md)。这里只发布策略与工具，不提供节点、凭据，不保证账号不被停用。
 
+当前维护位置是 [`delu543/jasper-projects` 的本目录](https://github.com/delu543/jasper-projects/tree/main/projects/networking/claude-residential-ip-rules)，所有下方命令均在本目录执行。[获取最新版](../../../docs/getting-started.md#claude-residential-ip-rules) · [已有配置如何安全更新](docs/MAINTENANCE.md)。旧独立仓库与 `history/*` 分支仅用于追溯，不是更新通道。
+
 ## 分流原则
 
 | 用途 | 路线 | 失败处理 |
@@ -74,6 +76,9 @@ node --test tests/routing.test.cjs tests/controller.test.cjs tests/watchdog.test
 python -m unittest discover -s tests -p 'test_*.py'
 # 可选：真实内核、全本机假上游，既不停止主代理也不消耗套餐。
 python tests/integration.py --mihomo /path/to/mihomo --snapshots
+python tests/integration_hot_reload.py --mihomo /path/to/mihomo
 ```
 
 [验证记录](docs/VALIDATION.md) · [能力变更](docs/CAPABILITY_MAP.md) · [来源和许可](docs/SOURCES.md)。所有私有清单、节点、备份和回执留在 `.private/`，不要提交到 GitHub。MIT 只覆盖本仓库原创实现；不捆绑第三方客户端或规则库。
+
+合并仓库 CI 位于根目录 [network-rules.yml](../../../.github/workflows/network-rules.yml)，运行 Windows/macOS/Linux 测试和受支持主机的 USB 后端导入检查。项目内部旧 workflow 保留为历史独立仓库用法，GitHub 不会在此子目录自动运行它。真实手机导入、DNS/STUN 与设备网络仍须单独验收。

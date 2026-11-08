@@ -15,6 +15,8 @@
 
 ## Claude Code
 
+macOS 路径发现覆盖 Claude.app、实际存在的独立 CLI 版本目录、桌面内置 `~/Library/Application Support/Claude/claude-code/` 和更新缓存；目录规则保留末尾分隔符，版本目录变化继续匹配，类似名称的其他目录不匹配。Windows 仍从实际进程/已知原生 CLI 盘点，不使用 Mac 路径。新安装草稿自动带入这些结果；已安装用户需按 [维护说明](MAINTENANCE.md) 比较并重新生成必要的路径补强，拉取代码不会改写运行规则。
+
 `clients.py apply` 合并 `.claude/settings.json` 的 HTTP_PROXY/HTTPS_PROXY（大小写）和空 NO_PROXY，保留其他 env、permissions 等。`clients.py code -- ...` 先检查固定组和公网出口，再带固定代理环境启动本地 CLI。新的 shell 环境不会改变已经运行的任务；不要强制退出正在开发的会话。
 
 共享 Node/Python、MCP、自定义下载器可能不遵从代理环境。启动工具继承 env 不等于这些工具使用代理。请用真实连接元数据、socket归属和受控请求核验；不要将全部 Node/Python 进程归住宅，避免 Codex、其他项目消耗住宅流量。
