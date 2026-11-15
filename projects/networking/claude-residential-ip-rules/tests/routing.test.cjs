@@ -2,6 +2,53 @@ const {test} = require('node:test');
 const assert = require('node:assert/strict');
 const {build} = require('../src/routing.js');
 const options = require('../examples/settings.example.json');
+const microsoftDomains = ['live.com','live.net','microsoft.com','microsoftonline.com',
+  'msauth.net','msftauth.net','msauthimages.net','outlook.com','hotmail.com',
+  'office.com','office.net','arkoselabs.com','funcaptcha.com'];
+
+test('Microsoft account routes and DNS follow each users selected fixed node', () => {
+  for (const address of ['192.0.2.42', '198.51.100.73']) {
+    const {c,o}=fixture();
+    o.fixedNode={...c.proxies[0],name:'user-selected',server:address};
+    o.residential={name:o.fixedNode.name,type:o.fixedNode.type,server:address,port:o.fixedNode.port};
+    o.proxiedResolvers=['https://1.1.1.1/dns-query'];
+    // A pre-existing user extension must not duplicate a newly built-in rule.
+    o.extraClaudeDomains=['live.com','custom.example'];
+    const r=build(c,o), rules=r.rules;
+    assert.equal(r.proxies.find(p=>p.name==='住宅固定节点').server,address);
+    assert.deepEqual(r['proxy-groups'][0].proxies,['住宅固定节点']);
+    for (const domain of microsoftDomains) {
+      const rule=`DOMAIN-SUFFIX,${domain},Claude 固定出口`;
+      assert.equal(rules.filter(x=>x===rule).length,1);
+      assert.ok(rules.indexOf(rule)>rules.indexOf('DOMAIN-SUFFIX,claudeusercontent.com,Claude 固定出口'));
+      assert.ok(rules.indexOf(rule)<rules.indexOf('GEOSITE,PRIVATE,DIRECT'));
+      assert.deepEqual(r.dns['nameserver-policy']['+.'+domain],['https://1.1.1.1/dns-query#Claude 固定出口']);
+    }
+  }
+});
+
+test('Microsoft policy increment preserves every unrelated generated setting', () => {
+  const fs=require('node:fs'), vm=require('node:vm');
+  const policy=require('../src/policy.json');
+  const source=fs.readFileSync(require.resolve('../src/routing.js'),'utf8');
+  const {c,o}=fixture();
+  o.extraClaudeDomains=['custom.example'];
+  o.proxiedResolvers=['https://9.9.9.9/dns-query'];
+  const previousPolicy={...policy,claudeDomains:policy.claudeDomains.filter(d=>!microsoftDomains.includes(d))};
+  const previous=JSON.parse(JSON.stringify(vm.runInNewContext(source+'\nbuild(input,options)',
+    {ROUTING_POLICY:previousPolicy,input:c,options:o})));
+  const next=build(c,o);
+  // Retain the repository's existing per-protected-domain UDP rejection behavior.
+  const additions=new Set(microsoftDomains.flatMap(d=>[
+    `DOMAIN-SUFFIX,${d},Claude 固定出口`, `AND,((NETWORK,udp),(DOMAIN-SUFFIX,${d})),REJECT`]));
+  assert.equal(next.rules.length-previous.rules.length,26);
+  next.rules=next.rules.filter(r=>!additions.has(r));
+  for (const domain of microsoftDomains) {
+    assert.deepEqual(next.dns['nameserver-policy']['+.'+domain],['https://9.9.9.9/dns-query#Claude 固定出口']);
+    delete next.dns['nameserver-policy']['+.'+domain];
+  }
+  assert.deepEqual(next,previous);
+});
 test('rendered Verge policy works without require or filesystem access', () => {
   const fs = require('node:fs'), vm = require('node:vm');
   const policy = fs.readFileSync(require.resolve('../src/policy.json'),'utf8');

@@ -129,11 +129,22 @@ class UniversalTests(unittest.TestCase):
         o=self.fixture();o['policy']['directDomains']=['claude.ai']
         with self.assertRaisesRegex(ValueError,'conflict'):u.context(self.put(o))
 
+    def test_microsoft_direct_conflicts_fail_before_deployment(self):
+        for domain in ['live.com','signup.live.com','login.microsoftonline.com','outlook.com','funcaptcha.com']:
+            with self.subTest(domain=domain):
+                o=self.fixture();o['policy']['directDomains']=[domain]
+                with self.assertRaisesRegex(ValueError,'conflict'):u.context(self.put(o))
+                self.assertFalse((self.root/'plan').exists())
+
     def test_shadowrocket_multi_source_and_legacy_usb_integrity(self):
         o=self.fixture('shadowrocket','ios');self.prepare(o)
         conf=(self.root/'plan/shadowrocket.conf').read_text()
         self.assertIn('CR_CLAUDE = select,CR_RESIDENTIAL',conf)
         self.assertIn('dns-fallback-system = false',conf)
+        for domain in ['live.com','live.net','microsoft.com','microsoftonline.com','msauth.net',
+                       'msftauth.net','msauthimages.net','outlook.com','hotmail.com','office.com',
+                       'office.net','arkoselabs.com','funcaptcha.com']:
+            self.assertLess(conf.index('DOMAIN-SUFFIX,'+domain+',CR_CLAUDE'),conf.index('GEOIP,CN,DIRECT'))
         self.assertEqual(mobile.check(self.manifest,self.root/'plan')['offlineIntegrity'],'pass')
         o['sources'][0]['sha256']='0'*64;self.put(o)
         with self.assertRaises(ValueError):mobile.check(self.manifest,self.root/'plan')
@@ -149,6 +160,10 @@ class UniversalTests(unittest.TestCase):
         self.assertIn('PROTOCOL,STUN,REJECT',conf);self.assertIn('encrypted-dns-server =',conf)
         self.assertNotIn('dns-fallback-system',conf)
         self.assertIn('CR_CLAUDE = select,CR_RESIDENTIAL',conf)
+        for domain in ['live.com','live.net','microsoft.com','microsoftonline.com','msauth.net',
+                       'msftauth.net','msauthimages.net','outlook.com','hotmail.com','office.com',
+                       'office.net','arkoselabs.com','funcaptcha.com']:
+            self.assertLess(conf.index('DOMAIN-SUFFIX,'+domain+',CR_CLAUDE'),conf.index('GEOIP,CN,DIRECT'))
         for text in ('[Proxy]\na = vless,192.0.2.1,443,password=x',
                      '[Proxy]\na = trojan,192.0.2.1,443,password=x,underlying-proxy=DIRECT',
                      '[Proxy]\na = ss,192.0.2.1,443,password=x,method=aes-128-gcm'):

@@ -68,13 +68,13 @@ def main():
                 inp={'proxies':[us.node('unrelated-active-subscription')]}
             js="const {build}=require(process.argv[1]);let fs=require('fs'),i=JSON.parse(fs.readFileSync(0,'utf8'));process.stdout.write(JSON.stringify(build(i.c,i.o)));"
             cfg=json.loads(subprocess.check_output(['node','-e',js,str(ROOT/'src/routing.js')],input=json.dumps({'c':inp,'o':o}).encode()))
-            # Keep generated groups/listener, substitute deterministic domain rules to
-            # avoid downloading geodata and inspect actual routing without real clients.
+            # Keep the actual generated domain rules, including account-registration
+            # domains. Omit only geodata/process rules so the test needs no downloads.
+            domain_rules=[r for r in cfg['rules'] if r.startswith('DOMAIN-SUFFIX,')]
             cfg.update({'mixed-port':normalport,'external-controller':f'127.0.0.1:{control}',
                 'allow-lan':False,'bind-address':'127.0.0.1','tun':{'enable':False},
                 'dns':{'enable':False},'log-level':'warning',
-                'rules':['DOMAIN,claude.ai,Claude 固定出口', 'DOMAIN,chatgpt.com,ChatGPT 普通出口',
-                         'DOMAIN,localhost,DIRECT', 'MATCH,普通外网（美国优先）']})
+                'rules':domain_rules+['DOMAIN,localhost,DIRECT', 'MATCH,普通外网（美国优先）']})
             for g in cfg['proxy-groups']:
                 if g['type']=='fallback':g.update(url='http://health.example.invalid/health',timeout=500,interval=3600)
             path=td/'config.json';path.write_text(json.dumps(cfg, ensure_ascii=False))
@@ -97,6 +97,10 @@ def main():
             assert q.stdout=='US', (q.stdout, q.stderr, api('/proxies'), us.calls, jp.calls, (td/'core.log').read_text(encoding='utf-8'))
             assert request(dedicated,'http://downloads.example.invalid/file').stdout=='RES'
             assert request(normalport,'http://claude.ai/request').stdout=='RES'
+            account_hosts=['signup.live.com','login.live.com','login.microsoftonline.com',
+                           'outlook.com','client-api.arkoselabs.com','funcaptcha.com']
+            for host in account_hosts:
+                assert request(normalport,'http://'+host+'/request').stdout=='RES',host
             assert request(normalport,'http://chatgpt.com/request').stdout=='US'
             # A real DIRECT request to our own local HTTP listener.
             assert request(normalport,f'http://localhost:{jp.port}/direct').stdout=='JP'
@@ -109,11 +113,13 @@ def main():
             count=(len(us.calls),len(jp.calls))
             assert request(dedicated,'http://downloads.example.invalid/file').returncode!=0
             assert request(normalport,'http://claude.ai/request').returncode!=0
+            for host in account_hosts:
+                assert request(normalport,'http://'+host+'/request').returncode!=0,host
             assert (len(us.calls),len(jp.calls))==count,'residential traffic fell back to ordinary'
             proc.terminate();proc.wait(timeout=5);proc=None
             assert request(dedicated,'http://downloads.example.invalid/file').returncode!=0
             log.close()
-            print('PASS: US priority; other-region failover; all ordinary dead rejects; no residential borrowing; residential fails closed; private DIRECT; dedicated listener closed fails.')
+            print('PASS: generated Claude/Microsoft/captcha routes; US priority; other-region failover; all ordinary dead rejects; no residential borrowing; fixed routes fail closed; private DIRECT; dedicated listener closed fails.')
     finally:
         if proc is not None:
             proc.terminate();proc.wait(timeout=5)

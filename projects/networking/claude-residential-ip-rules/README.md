@@ -11,10 +11,13 @@
 | 用途 | 路线 | 失败处理 |
 |---|---|---|
 | 已识别的 Claude 请求、受支持客户端及专用代理入口 | 用户明确选定的一个固定节点 | 请求失败，不切其他节点、不直连 |
+| 微软 / Outlook 注册登录及相关验证码域名 | 同一个用户选定的 Claude 固定节点 | 请求失败，不借普通池或直连 |
 | ChatGPT、Codex、Twitter、YouTube、普通外网 | 用户选定的普通节点池，可来自多份订阅 | 默认美国优先，再尝试其他普通节点；不借 Claude 专线 |
 | 国内及内网请求 | 按用户所在地区、现有本地规则与企业网络确定 DIRECT | 不粗暴把整个微信或整个浏览器归类 |
 
 一份订阅里的多个节点也可以分别承担角色。专线专用的来源不进入普通池；混合套餐需要明确标记 `mixed` 并选定节点。节点名称不是住宅/地理/计费身份的证明。仅有一个节点又要求“专线不供普通外网使用”时，普通外网无法同时获得代理服务；工具不会偷偷直连或共用，而会要求明确接受普通流量拒绝，或补充普通节点。
+
+注册登录域名来自公共 [policy.json](src/policy.json)：`live.com`、`live.net`、`microsoft.com`、`microsoftonline.com`、`msauth.net`、`msftauth.net`、`msauthimages.net`、`outlook.com`、`hotmail.com`、`office.com`、`office.net`、`arkoselabs.com`、`funcaptcha.com`。Mihomo 将它们的域名规则及 DNS 一起绑定到用户自己的固定节点；不预填作者的出口 IP、节点或订阅。共享域名的其他微软服务也会使用该路线和流量。既有安装按 [增量维护步骤](docs/MAINTENANCE.md#微软outlook-注册域名增量2026-11-14) 更新，拉取源码本身不会改变设备网络。
 
 ## 当前能自动到哪一步
 

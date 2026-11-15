@@ -2,6 +2,20 @@
 
 维护源是 `jasper-projects/main` 的 `projects/networking/claude-residential-ip-rules`。根目录其他项目、历史分支和旧独立仓库不参与运行配置。先核对本地 remote/分支/未提交修改，保留 `.private` 和旧回退材料；不要用 `reset --hard`、强制覆盖或清理目录来更新。
 
+## 微软/Outlook 注册域名增量（2026-11-14）
+
+公共 `src/policy.json` 新增 13 个注册、登录和验证码后缀，见 README 完整清单。`signup.live.com` 和 `login.live.com` 由 `live.com` 后缀覆盖。生成器从本地清单的 `roles.claude` / 旧版 `residential` 选择固定节点，不复制维护者的公网 IP、入站地址、节点名或订阅。普通池、地区优先级、ChatGPT opt-in 和国内规则均保持原设置。
+
+- **Mihomo / Verge**：新增后缀规则排在已有内置 Claude 域名之后、`GEOSITE,PRIVATE` 之前；`nameserver-policy` 对应的 `+.<域名>` 使用用户选定的 `proxiedResolvers`，每个解析器附加 `#Claude 固定出口`。保留自定义 DNS；兼容入口默认包含 `https://1.1.1.1/dns-query` 和 Google DoH，两者都经过固定组，不能默默改成 DIRECT。
+- **既有 UDP 行为**：仓库的受保护域名一直另有 UDP 拒绝规则，新加入的 13 个域名沿用此行为。因此新生成的 Mihomo 配置增加 13 条固定出口规则、13 条相应 UDP 规则和 13 个 DNS policy；不是只凭配置行数判断成功，也不额外开启全机 UDP 拒绝。相关网页可能改用 TCP，部分通话功能需要实际验证。
+- **手机适配**：Shadowrocket / Surge 从同一公共表生成固定域名路线；其原生 DNS 实现和能力边界不变，不能将 Mihomo 的 `nameserver-policy` 字段粘贴进去或宣称已获得相同分域 DNS 保证。仍按 LEAK-PROTECTION、原生导入及设备日志验收。
+
+已有部署先读当前持久 Script、Merge、runtime 和私有清单，备份并记录哈希。只追加缺失的这些域名及 DNS 项，避免与用户已有 `extraClaudeDomains` 重复；保留其他自定义规则、额外 Claude 域名、固定节点、端口、普通池、TUN 和系统/浏览器设置。不要为同步域名直接用整份模板覆盖现网。若有微软域名被用户明确要求 DIRECT 或企业内网路由，先报告冲突与影响，不能静默抹掉既有要求；通用清单会拒绝冲突的 directDomains。
+
+完成差异检查后沿用原备份、语法校验、`force=false` 热加载及冲突保护回滚流程。使用目标机实际普通代理端口新建 `curl https://signup.live.com`、`curl https://login.live.com` 请求，查看它们命中固定组；再从专用入口核对公网出口与该用户已确认的预期值一致。不要仅用强制专用端口请求替代域名规则验收，不打印登录参数、Cookie 或节点凭据，不自动提交账号注册。
+
+旧连接可能维持旧出口，不能为通过检查清空所有连接或重启开发应用。共享域名的其他微软/Outlook/Office 服务也将计入所选固定线路流量。连接和出口一致不证明注册错误码已解除，也不保证注册或验证成功。
+
 ## 2026-11-07 补强范围
 
 桌面端 Claude 可能把内置 Code 安装到应用包之外。只匹配 Claude.app 和独立 CLI 会漏掉 `~/Library/Application Support/Claude/claude-code/` 下的可执行文件。`manage.discover_paths()` 现在仅在该目录实际存在时加入其稳定根目录；`universal.py discover/draft` 与旧 `manage.py init` 共用这一发现逻辑。

@@ -21,7 +21,7 @@ Surge加密DNS使用IP字面量避免引导查域名，传统DNS IP仍用于连�
 
 分流选择请求出口；WebRTC 策略决定网页能否自行建立直连 STUN/ICE 连接。国内网站 DIRECT + 普通外网代理时，如果浏览器未限制 WebRTC，同一网页可向国内 STUN 发请求并拿到国内公网地址，即使网页 HTTP 出口在国外。这是覆盖缺口，不能靠把检测网站改成住宅来修复。
 
-默认只有 Claude 域名、已识别 Claude 进程和专用 HTTP 入口走住宅。ChatGPT、Codex、普通外网和检测网站走普通订阅；国内保持直连。浏览器不是整体绑定住宅，网页中的任意第三方请求也不能仅靠域名表自动认定属于 Claude。需要全部第三方请求固定住宅时使用独立浏览器实例/显式专用代理，并另做实际验证，不要全局修改普通 Chrome。
+默认公共策略中的 Claude 域名、微软/Outlook 注册登录及验证码域名、已识别 Claude 进程和专用 HTTP 入口走用户选择的固定路线。ChatGPT、Codex、普通外网和检测网站走普通订阅；国内保持直连。共享微软域名的其他服务也使用固定路线，但浏览器不是整体绑定住宅，网页中的任意第三方请求不能仅靠域名表自动归类。需要全部第三方请求固定住宅时使用独立浏览器实例/显式专用代理，并另做实际验证，不要全局修改普通 Chrome。
 
 ## Chrome WebRTC（macOS / Windows）
 
@@ -48,7 +48,7 @@ python3 scripts/browser_privacy.py rollback
 
 ## DNS 路径与验证
 
-- Claude 四类域名（claude.ai / claude.com / anthropic.com / claudeusercontent.com）的 `nameserver-policy` 显式指定 `https://1.1.1.1/dns-query#Claude 固定出口`。
+- `src/policy.json` 中的 Claude 及微软/Outlook/验证码域名与用户额外确认的域名共用住宅 DNS policy：`+.<域名>` 对应用户选定的代理 DoH 并附加 `#Claude 固定出口`，例如 `https://1.1.1.1/dns-query#Claude 固定出口`。自定义代理解析器保留；手机原生适配不能据此推断有相同逐域 DNS 能力。
 - 普通海外域名经普通代理 DoH；国内域名走国内 DoH；节点引导解析独立，避免 DNS 依赖代理、代理又依赖 DNS 的循环。引导 DNS 可能直连，这是必要例外，不是“系统所有 DNS 都不出本地网络”的保证。
 - 当前生成器对已启用 TUN 补齐 `any:53` 和 `tcp://any:53`。不要盲目启用 TUN、覆盖原网关或企业内网。仅有规则并不能证明系统 DNS 被捕获。
 - macOS/Windows 的 LAN DNS 有接管边界；必须核对实际系统解析器。Windows `strict-route` 有助于防多宿主 DNS 泄露，但可能影响虚拟网络；需按内核版本单独验证。不要把新版本文档字段强加给旧内核。

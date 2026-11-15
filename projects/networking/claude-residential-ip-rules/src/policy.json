@@ -1,4 +1,9 @@
 {
-  "claudeDomains": ["claude.ai", "claude.com", "anthropic.com", "claudeusercontent.com"],
+  "claudeDomains": [
+    "claude.ai", "claude.com", "anthropic.com", "claudeusercontent.com",
+    "live.com", "live.net", "microsoft.com", "microsoftonline.com",
+    "msauth.net", "msftauth.net", "msauthimages.net", "outlook.com",
+    "hotmail.com", "office.com", "office.net", "arkoselabs.com", "funcaptcha.com"
+  ],
   "openaiDomains": ["chatgpt.com", "openai.com", "oaistatic.com", "oaiusercontent.com"]
 }
