@@ -106,7 +106,7 @@ python3 <client> daily-digest --init-cursors-at "2026-01-01 08:00"   # 只设置
 5. `quick_check` + 必需表检查 + doctor 通过后，**原子**更新 profile 的 `vault_dir`；失败则保留旧快照；
 6. 之后按保留策略删除同账号旧 `run-*`（`WECHAT_LOCAL_EXPORT_KEEP_RUNS`，默认 1，永不删当前）。
 
-单聊天 scan 只刷新 contact + 该聊天所在分片；`daily-digest` 刷新 contact + 所有已初始化的 `message_N`。
+单聊天 scan 按该聊天所在分片刷新 contact 与消息库。`daily-digest` 刷新 contact + 所有已初始化的 `message_N`。两种刷新发布新 profile 时都保留当前快照里已有的 `media_N` 与 `message_resource`，避免之后的语音或附件扫描看不到这些分片。
 消息表名为 `Msg_<md5(chat_id)>`；内容可能是 zstd 压缩；1:1 聊天与自己在群里的发言用
 `real_sender_id`（`Name2Id` 行号）表示发送者，本版本会解析成用户名和显示名。
 

@@ -9,6 +9,7 @@ import unittest
 from live_tools.wechat_online_refresh import (
     OnlineRefreshError,
     all_message_database_requests,
+    preserved_capability_databases,
     refresh_online_snapshot,
     refresh_online_snapshot_all_messages,
     snapshot_database_requests,
@@ -78,7 +79,7 @@ class OnlineRefreshTests(unittest.TestCase):
             calls["snapshot"] = kwargs
             return {
                 "status": "complete",
-                "database_count": 3,
+                "database_count": 4,
                 "run_directory": str(run),
                 "safety": {
                     "snapshot_mode": "online_sqlite_shm_coordinated_apfs_clone"
@@ -113,7 +114,7 @@ class OnlineRefreshTests(unittest.TestCase):
         self.assertIsNone(snapshot["keys_file"])
         self.assertEqual(
             snapshot["databases"],
-            ["contact", "message_0", "media_0"],
+            ["contact", "message_0", "media_0", "message_resource"],
         )
         self.assertIn("profile", calls)
         self.assertTrue(report["profile_updated"])
@@ -139,7 +140,7 @@ class OnlineRefreshTests(unittest.TestCase):
                 resolver=lambda account_ref: self.root / "db_storage",
                 snapshotter=lambda **kwargs: {
                     "status": "complete",
-                    "database_count": 2,
+                    "database_count": 4,
                     "run_directory": str(run),
                     "safety": {
                         "snapshot_mode": (
@@ -186,6 +187,55 @@ class AllMessageRefreshTests(unittest.TestCase):
             all_message_database_requests(self.vault),
             ["contact", "message_0", "message_1"],
         )
+        self.assertEqual(
+            preserved_capability_databases(self.vault),
+            ["media_0", "message_resource"],
+        )
+
+    def test_digest_snapshot_keeps_media_for_the_next_voice_scan(self) -> None:
+        run = self.root / "digest-run"
+        published: dict[str, str] = {}
+
+        def snapshotter(**kwargs: object) -> dict:
+            databases = list(kwargs["databases"])
+            decrypted = run / "decrypted"
+            for name in databases:
+                if name == "contact":
+                    relative = Path("contact/contact.db")
+                else:
+                    relative = Path("message") / f"{name}.db"
+                destination = decrypted / relative
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                source = self.vault / relative
+                destination.write_bytes(source.read_bytes())
+            return {
+                "status": "complete",
+                "database_count": len(databases),
+                "run_directory": str(run),
+                "safety": {
+                    "snapshot_mode": "online_sqlite_shm_coordinated_apfs_clone"
+                },
+            }
+
+        def profile_writer(_account_ref: str, profile: dict) -> None:
+            published["vault_dir"] = profile["vault_dir"]
+
+        refresh_online_snapshot_all_messages(
+            Binding(),
+            self._profile(),
+            output_root=self.root / "snapshots",
+            resolver=lambda account_ref: self.root / "db_storage",
+            snapshotter=snapshotter,
+            doctor_fn=lambda *args, **kwargs: {"ready_for_scan": True},
+            profile_writer=profile_writer,
+            pruner=None,
+        )
+        voice = snapshot_database_requests(
+            published["vault_dir"],
+            kinds=["voice"],
+            chat_id=self.chat_id,
+        )
+        self.assertEqual(voice, ["contact", "message_0", "media_0"])
 
     def test_one_refresh_then_prune_after_profile_switch(self) -> None:
         run = self.root / "run"
@@ -206,12 +256,15 @@ class AllMessageRefreshTests(unittest.TestCase):
             self._profile(),
             output_root=self.root / "snapshots",
             resolver=lambda account_ref: self.root / "db_storage",
-            snapshotter=self._snapshotter(calls, run, 3),
+            snapshotter=self._snapshotter(calls, run, 5),
             doctor_fn=lambda *a, **k: {"ready_for_scan": True},
             profile_writer=profile_writer,
             pruner=pruner,
         )
-        self.assertEqual(calls["snapshot"]["databases"], ["contact", "message_0", "message_1"])
+        self.assertEqual(
+            calls["snapshot"]["databases"],
+            ["contact", "message_0", "message_1", "media_0", "message_resource"],
+        )
         self.assertEqual(order, ["profile", "prune"])
         self.assertEqual(calls["pruned"], str((run / "decrypted").resolve()))
         self.assertEqual(report["retention"]["removed"], 2)
@@ -230,7 +283,7 @@ class AllMessageRefreshTests(unittest.TestCase):
             chat_id=self.chat_id,
             output_root=self.root / "snapshots",
             resolver=lambda account_ref: self.root / "db_storage",
-            snapshotter=self._snapshotter({}, run, 2),
+            snapshotter=self._snapshotter({}, run, 4),
             doctor_fn=lambda *a, **k: {"ready_for_scan": True},
             profile_writer=lambda *a: None,
             pruner=pruner,

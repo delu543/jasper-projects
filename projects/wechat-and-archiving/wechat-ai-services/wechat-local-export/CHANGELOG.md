@@ -11,6 +11,8 @@
   （`WECHAT_LOCAL_EXPORT_KEEP_RUNS`），永不删除当前 vault；失败不影响刷新结果。
 - 发送者解析：扫描计划新增 `sender_username`、`sender_display_name`、`sender_is_self`，
   通过 `Name2Id` + contact 解析 1:1 聊天与本人群发言的数字 id；归档 transcript 使用显示名。
+- 在线刷新发布新 profile 时保留当前 vault 里已有的 `media_N` 与 `message_resource`。
+  日报和只含文字的扫描不会把这些分片从后续语音或附件扫描的发现范围里拿掉。
 - 新模块：`content_vault/identity.py`、`content_vault/digest.py`、`live_tools/snapshot_retention.py`；
   新测试：`content_vault/tests/test_digest.py`、`live_tools/tests/test_snapshot_retention.py`、
   `portable_skill/tests/test_daily_digest.py`，以及在线刷新的全分片/保留测试。

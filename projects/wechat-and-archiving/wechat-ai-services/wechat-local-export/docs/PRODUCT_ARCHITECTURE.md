@@ -77,6 +77,9 @@ internally and never presented as a value the user must copy.
   first uses the prior verified vault to resolve a unique exact chat ID. Only
   then does the current-account path refresh `contact`, the target message
   shard(s), and the media/resource databases required by the requested kinds.
+  The published snapshot also keeps `media_N` and `message_resource` files that
+  are already in the previous vault, so a text-only refresh does not hide them
+  from the next voice or attachment scan.
   It reloads the validated profile, identifies kinds in memory, then persists
   only the user-requested kinds in deterministic order. Ambiguous chat
   candidates never trigger refresh. An explicit development vault remains a

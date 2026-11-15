@@ -140,6 +140,26 @@ def all_message_database_requests(vault_dir: str | Path) -> list[str]:
     ]
 
 
+def preserved_capability_databases(vault_dir: str | Path) -> list[str]:
+    """Media shards and message_resource already present in a verified vault.
+
+    A text digest must keep these files in the snapshot it publishes. The next
+    voice or attachment refresh discovers initialized databases by listing the
+    profile vault; dropping them here makes that later refresh fail.
+    """
+
+    vault = _resolve_vault(vault_dir)
+    preserved: list[str] = []
+    preserved.extend(
+        f"media_{int(MEDIA_NAME.fullmatch(path.name).group(1))}"
+        for path in _regular_files(vault / "message", MEDIA_NAME)
+    )
+    resource = vault / "message" / "message_resource.db"
+    if resource.is_file() and not resource.is_symlink():
+        preserved.append("message_resource")
+    return preserved
+
+
 def refresh_online_snapshot(
     binding: Any,
     profile: Mapping[str, Any],
@@ -188,7 +208,12 @@ def refresh_online_snapshot_all_messages(
     profile_writer: Callable[[str, Mapping[str, Any]], Any] = write_account_profile,
     pruner: Callable[..., Mapping[str, Any]] | None = prune_account_runs,
 ) -> dict[str, Any]:
-    """One coordinated refresh of contact + every message shard (text digests)."""
+    """One coordinated refresh of contact and every message shard.
+
+    ``_refresh_databases`` also keeps media shards and ``message_resource``
+    that are already in the profile vault, so this text digest does not
+    remove databases a later voice or attachment scan has to discover.
+    """
 
     vault_dir = profile.get("vault_dir")
     if not isinstance(vault_dir, str):
@@ -232,6 +257,9 @@ def _refresh_databases(
     swift_bin = profile.get("swift_bin")
     if not isinstance(vault_dir, str) or not isinstance(account_root, str):
         raise OnlineRefreshError("当前账号 profile 路径不完整")
+    for name in preserved_capability_databases(vault_dir):
+        if name not in databases:
+            databases.append(name)
 
     db_base = resolver(account_ref)
     report = snapshotter(
