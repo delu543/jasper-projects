@@ -25,3 +25,7 @@ Word builder 摘要变化会拒绝覆盖旧输出，需使用新候选路径并�
 ## 2026-11-02 功能融合
 
 公众号引擎更新到原公开默认分支 `0bd40506d1eee0f167638c2006b3efe8d7a2ee36`，来源可在合集 `history/wechat-public-account-archiver/main` 追溯。只保留一份 `wechat_crawler`，吸收保留缓存、增量正文/覆盖校验与安全恢复。保留套件命名空间、8876 端口、隔离配置、关闭调度和清理预览。数据库连接增加事务结束即关闭，修复回归中发现的延迟 WAL 冲刷。聊天核心保留套件命名空间、课程讲义与共享 Word 适配；没有重复引入另一份聊天引擎。
+
+## 2026-11-15 WeChatLocalExport 0.3.0-dev.1 源码
+
+`wechat-local-export/` 收入已脱敏的 WeChatLocalExport `0.3.0-dev.1` 源码包，供其他 AI 代理按 [GUIDE.md](../wechat-local-export/GUIDE.md) 在用户自己的 Mac 上重建数据库扫描与导出。包内容包含在线刷新、日报 `daily-digest`、快照保留和发送者显示名解析，测试夹具为合成数据。包内没有 LICENSE，许可尚未决定，因此本目录不新增许可文件。固定来源是源码包 `wechat-local-export-src-0.3.0`，sha256 `3bfbfb86ec2fce67ba22278a2a3c0662cdebee07dc21a865911c5deedb4fc73c`。套件已融合的聊天引擎仍是 `components/chat`。

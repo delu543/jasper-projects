@@ -6,6 +6,10 @@
 **/.build/
 **/tests/
 **/test_*
+# Nested WeChatLocalExport source kit keeps its synthetic tests in git.
+!wechat-local-export/**/tests/
+!wechat-local-export/**/tests/**
+!wechat-local-export/**/test_*
 **/work/
 **/data/
 **/logs/

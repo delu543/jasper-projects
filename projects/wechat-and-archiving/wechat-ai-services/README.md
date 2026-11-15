@@ -4,6 +4,10 @@
 
 原“微信数据提取”和“公众号本地归档”已融合到本项目：聊天只有一份解析与导出引擎；公众号只有一份归档、去重和交付状态。各能力按结果组织，不需要判断该打开哪个旧项目。
 
+Mac 微信数据库扫描与导出的完整源码在 [wechat-local-export/](wechat-local-export/)（WeChatLocalExport `0.3.0-dev.1`：在线刷新、日报 `daily-digest`、快照保留、发送者显示名解析）。其他 AI 代理要在用户自己的 Mac 上重建这套工具链，从 [wechat-local-export/GUIDE.md](wechat-local-export/GUIDE.md) 读起；指南里的「本仓库」就是这个目录。套件里已融合的聊天服务仍从 `python3 wechat_ai.py` 与 `components/chat` 进入。
+
+The Mac WeChat DB scan/export toolchain is [wechat-local-export/](wechat-local-export/). Other AI agents should start at [wechat-local-export/GUIDE.md](wechat-local-export/GUIDE.md).
+
 ## 先选你要的结果
 
 | 目标 | 任务入口 | 交付 |
