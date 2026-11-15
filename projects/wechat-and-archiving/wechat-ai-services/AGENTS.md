@@ -4,6 +4,8 @@
 先读 `docs/FIRST_RUN.md` 和 `docs/CAPABILITY_MAP.md`，再执行根目录 `wechat_ai.py`。
 打开仓库不执行代码。用户要求安装或使用后，先 doctor，仅安装所需服务。
 
+本机微信数据库扫描是本项目的一部分，源码在 `wechat-local-export/`（WeChatLocalExport `0.3.0-dev.1`）。其他代理先读 `wechat-local-export/GUIDE.md` 和 `wechat-local-export/AGENTS.md`。两个可移植 Skill 在 `wechat-local-export/portable_skill/skills/wechat-local-export` 与 `wechat-local-export/portable_skill/skills/wechat-local-export-setup`；后者只能由用户显式调用。套件其他任务仍从 `wechat_ai.py` 进入。
+
 ## 实施与隐私
 
 - `components/` 保存已审阅的功能代码和原契约。套件的路径、安装、调度与默认行为以根文档和 `services/` 为准；不要直接运行组件旧安装器。

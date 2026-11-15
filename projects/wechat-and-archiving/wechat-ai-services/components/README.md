@@ -8,4 +8,4 @@
 | [articles](articles/README.md) | 公众号文章发现、归档、增量更新与本地控制台 | `articles` |
 | [media](media/README.md) | 链接/文件识别、音频获取、转码与验证 | `media` |
 
-课程合集编排位于 [services/courses.py](../services/courses.py)，复用直播的本地 ASR 与 Word 构建能力。来源提交、许可及适配边界见 [来源记录](../docs/SOURCES.md)。
+课程合集编排位于 [services/courses.py](../services/courses.py)，复用直播的本地 ASR 与 Word 构建能力。Mac 微信数据库扫描与导出的源码在同级目录 [wechat-local-export](../wechat-local-export/GUIDE.md)，属于本项目，不在 `components/` 内。来源提交、许可及适配边界见 [来源记录](../docs/SOURCES.md)。

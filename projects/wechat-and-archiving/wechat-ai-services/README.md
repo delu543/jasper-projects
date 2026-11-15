@@ -1,8 +1,21 @@
 # 微信 AI 服务
 
-把微信聊天、公众号文章、回放与课程整理成可保存、可核验的档案。Codex 和 Claude 使用同一份任务说明与命令入口。
+WeChat AI Services. 这是合集中的一个项目：把本机微信数据库扫描、聊天导出、公众号文章、回放、课程和媒体转音频放在同一份说明里。Codex、Claude 和只读本仓库的助手使用同一份入口。
 
-原“微信数据提取”和“公众号本地归档”已融合到本项目：聊天只有一份解析与导出引擎；公众号只有一份归档、去重和交付状态。各能力按结果组织，不需要判断该打开哪个旧项目。
+## 项目组成
+
+| 部分 | 位置 | 做什么 |
+| --- | --- | --- |
+| 本机数据库扫描与导出 | [wechat-local-export/](wechat-local-export/) | WeChatLocalExport `0.3.0-dev.1`：在线刷新、日报 `daily-digest`、快照保留、发送者显示名。其他 AI 从 [GUIDE.md](wechat-local-export/GUIDE.md) 读起 |
+| 套件聊天与回放 | [components/chat](components/chat/README.md) | 已融合的解析、精确导出、语音 MP4 与回放引擎，经 `wechat_ai.py` 调用 |
+| 公众号 | [components/articles](components/articles/README.md) | 一份归档、去重、增量与交付状态 |
+| 媒体 | [components/media](components/media/README.md) | 链接或本地文件转 MP3，并做完整解码核验 |
+| 课程 | [services/courses.py](services/courses.py) | 复用回放的本地转写与 Word |
+| 可移植 Skill | [portable_skill/skills](wechat-local-export/portable_skill/skills/) | `wechat-local-export` 与仅能显式调用的 `wechat-local-export-setup` |
+
+GUIDE 里的「本仓库」就是 `wechat-local-export/` 这个目录。安装检查用 [scripts/codex_bootstrap.sh](wechat-local-export/scripts/codex_bootstrap.sh)。工具链自己的代理说明是 [AGENTS.md](wechat-local-export/AGENTS.md)。
+
+The Mac WeChat DB scan/export toolchain lives in [wechat-local-export/](wechat-local-export/). Other agents start at [GUIDE.md](wechat-local-export/GUIDE.md). Suite tasks still start at `python3 wechat_ai.py`.
 
 ## 先选你要的结果
 
@@ -40,10 +53,25 @@ python3 wechat_ai.py doctor articles
 
 可见历史、订阅和本地控制台都复用这一文章引擎。被动缓存之外的账号接入与初始化仍需相应明确授权。[公众号操作说明](skills/wechat-ai-articles/SKILL.md)
 
-## 适用范围
+## 本机数据库扫描的前提
 
-聊天支持 macOS；Windows 聊天仍是实机待验的源码预览。公众号可见会话流程为 macOS。回放目录与 MLX 转写为 Apple Silicon 开发预览；媒体核心支持 macOS / Windows。没有把合成回归当作所有电脑与账号的实机验收。[能力与验证边界](docs/CAPABILITY_MAP.md)
+在用户自己的 Mac 上使用 `wechat-local-export` 时需要：
 
-账号、消息、媒体、数据库、模型和交付文件保存在本机。聊天初始化、私有快照、临时代理、发送消息与模型下载分别判断授权，不相互继承。
+- Apple Silicon（arm64）Mac
+- 官方微信 4.x 已登录，并保持打开
+- 终端或代理进程拥有完全磁盘访问权限，才能读取本机微信容器
+- 每个账号的密钥初始化只在用户明确发出 `$wechat-local-export-setup` 之后进行；安装依赖、取密钥、保留私有解密快照分别确认
+
+## 已验证与未验证
+
+`wechat-local-export` 已在真实环境验证的范围：arm64 Mac、系统完整性保护保持开启、官方 Mac 微信 4.1.x（作者机器为 4.1.15）、单账号；文字扫描、语音 MP4、日报 `daily-digest`。
+
+尚未实机验证、只能当源码预览的范围：Intel Mac、微信 3.x、其他 4.x 小版本、多个 `message_N` 分片同时活跃、Windows。未知版本按诊断状态处理。
+
+套件其余能力：公众号可见会话为 macOS；回放目录与 MLX 转写、课程 MLX 为 Apple Silicon 开发预览；媒体核心支持 macOS / Windows。合成测试不等于每台电脑、每个账号都已验收。[能力与验证边界](docs/CAPABILITY_MAP.md)
+
+## 安全边界
+
+只处理用户有权访问的本机数据。扫描与导出不上传聊天内容，不操作微信界面，不修改官方微信应用和它的实时数据库。密钥不进入命令行、环境变量、日志或本仓库。聊天初始化、私有快照、临时代理、发送消息和模型下载各自单独授权，不互相继承。账号、消息、媒体、数据库和交付文件留在本机。
 
 [Skills 导航](skills/README.md) · [统一执行约定](skills/COMMON.md) · [融合与旧数据迁移](docs/INTEGRATION.md) · [许可范围](docs/LICENSE_SCOPE.md) · [来源](docs/SOURCES.md)

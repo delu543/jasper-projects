@@ -16,6 +16,17 @@ FILES = {'.gitignore', 'AGENTS.md', 'CLAUDE.md', 'README.md', 'LICENSE.md', 'wec
 FORBIDDEN_PARTS = {'work', '.codex', '.git', '.build', '.venv', '__pycache__', 'tests', 'node_modules'}
 FORBIDDEN_SUFFIXES = {'.pyc', '.sqlite', '.db', '.docx', '.mp3', '.mp4', '.m4a', '.wav',
                       '.flac', '.pem', '.key', '.safetensors', '.png', '.jpg', '.zip'}
+# Sanitized source kits live beside the suite so other agents can rebuild from them.
+# Their synthetic tests stay tracked; private dumps and secrets stay forbidden.
+NESTED_SOURCE_KITS = {'wechat-local-export'}
+NESTED_FORBIDDEN_PARTS = FORBIDDEN_PARTS - {'tests'} | {'outputs', 'tasks'}
+NESTED_FORBIDDEN_SUFFIXES = FORBIDDEN_SUFFIXES | {
+    '.sqlite3', '.silk', '.pcm', '.jsonl', '.log', '.pid', '.p12', '.mobileprovision',
+    '.mov', '.whl', '.dylib', '.so', '.dll', '.exe', '.db-shm', '.db-wal', '.dpapi'}
+SENSITIVE_PATTERNS = [r'/Users/[^/\s]+/(?:Documents|\.codex|\.cache)/',
+                      r'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----',
+                      r'gh[pousr]_[A-Za-z0-9]{30,}', r'sk-[A-Za-z0-9_-]{30,}',
+                      r'https?://[^\s"<>]+[?&](?:pass_ticket|appmsg_token|exportkey)=[^\s<>"&]{12,}']
 
 
 def candidates():
@@ -30,6 +41,50 @@ def candidates():
     return sorted(found)
 
 
+def _nested_forbidden(rel: Path) -> str | None:
+    if set(rel.parts) & NESTED_FORBIDDEN_PARTS or rel.name.startswith('.env'):
+        return f'nested_private:{rel}'
+    suffixes = {rel.suffix.lower(), ''.join(rel.suffixes[-2:]).lower()}
+    if suffixes & NESTED_FORBIDDEN_SUFFIXES:
+        return f'nested_forbidden_file:{rel}'
+    return None
+
+
+def scan_nested_kits():
+    """Scan vendored source kits for dumps and secrets; keep their tests.
+
+    Generated directories such as ``__pycache__`` are skipped here. Tracked
+    copies are rejected separately so a local test run does not fail the check.
+    """
+    errors = []
+    for name in sorted(NESTED_SOURCE_KITS):
+        root = ROOT / name
+        if not root.is_dir():
+            continue
+        for path in root.rglob('*'):
+            if not path.is_file() and not path.is_symlink():
+                continue
+            rel = path.relative_to(ROOT)
+            if _nested_forbidden(rel):
+                continue
+            if path.is_symlink():
+                errors.append(f'nested_private:{rel}')
+                continue
+            try:
+                content = path.read_text(encoding='utf-8')
+            except UnicodeDecodeError:
+                errors.append(f'nested_non_text:{rel}')
+                continue
+            if any(re.search(pattern, content) for pattern in SENSITIVE_PATTERNS):
+                errors.append(f'sensitive_pattern:{rel}')
+            if path.suffix == '.py':
+                try:
+                    ast.parse(content, filename=str(rel))
+                except SyntaxError:
+                    errors.append(f'python_syntax:{rel}')
+    return errors
+
+
 def check():
     errors = []; files = candidates()
     for path in files:
@@ -42,11 +97,7 @@ def check():
             content = path.read_text(encoding='utf-8')
         except UnicodeDecodeError:
             errors.append(f'non_text_source:{rel}'); continue
-        patterns = [r'/Users/[^/\s]+/(?:Documents|\.codex|\.cache)/',
-                    r'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----',
-                    r'gh[pousr]_[A-Za-z0-9]{30,}', r'sk-[A-Za-z0-9_-]{30,}',
-                    r'https?://[^\s"<>]+[?&](?:pass_ticket|appmsg_token|exportkey)=[^\s<>"&]{12,}']
-        if any(re.search(pattern, content) for pattern in patterns):
+        if any(re.search(pattern, content) for pattern in SENSITIVE_PATTERNS):
             errors.append(f'sensitive_pattern:{rel}')
         if path.suffix == '.py':
             try:
@@ -68,7 +119,16 @@ def check():
         # Also enforce the contract when this project is a monorepo subdirectory.
         tracked = subprocess.check_output(['git', 'ls-files', '-z', '--', '.'], cwd=ROOT).decode().split('\0')
         allowed = {str(p.relative_to(ROOT)) for p in files}
-        errors.extend('tracked_outside_public_contract:'+p for p in tracked if p and p not in allowed)
+        for p in tracked:
+            if not p or p in allowed:
+                continue
+            if p.split('/', 1)[0] not in NESTED_SOURCE_KITS:
+                errors.append('tracked_outside_public_contract:'+p)
+                continue
+            forbidden = _nested_forbidden(Path(p))
+            if forbidden:
+                errors.append(forbidden)
+    errors.extend(scan_nested_kits())
     manifest = ROOT/'source-files.json'
     if manifest.is_file():
         expected = json.loads(manifest.read_text())

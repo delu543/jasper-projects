@@ -34,6 +34,16 @@
       "scope": "11 changed files under portable_skill/skills/wechat-replay-word since chat baseline; includes dashboard lock and assembler proof binding",
       "adapted": true,
       "tests": "maintainer-local only"
+    },
+    {
+      "component": "wechat-local-export",
+      "path": "wechat-local-export/",
+      "version": "0.3.0-dev.1",
+      "origin": "sanitized source bundle wechat-local-export-src-0.3.0",
+      "bundle_sha256": "3bfbfb86ec2fce67ba22278a2a3c0662cdebee07dc21a865911c5deedb4fc73c",
+      "license": "not included; owner has not decided",
+      "scope": "Mac WeChat DB scan/export toolchain source for other agents, including online refresh, daily-digest, snapshot retention, and sender name resolution. Suite chat service remains components/chat.",
+      "tests": "synthetic fixtures included in the tree"
     }
   ],
   "local_adaptations": [
