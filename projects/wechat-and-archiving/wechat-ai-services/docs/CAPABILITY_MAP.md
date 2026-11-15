@@ -2,7 +2,8 @@
 
 先看交付结果和使用范围；展开下方技术明细可核对实现与验证边界。
 
-- **聊天数据：** 按范围导出消息和媒体，选定语音可合成 MP4。macOS 已有部分实机证据；Windows 聊天为[源码预览](../skills/wechat-ai-chat/SKILL.md)。
+- **本机数据库扫描：** [wechat-local-export](../wechat-local-export/GUIDE.md) 是本项目中的 Mac 微信 4.x 扫描与导出源码。已验证范围是 arm64 Mac、SIP 开启、官方微信 4.1.x、单账号下的文字扫描、语音 MP4 和 `daily-digest`。Intel Mac、微信 3.x、其他 4.x 小版本和 Windows 仍是源码预览。
+- **聊天数据：** 按范围导出消息和媒体，选定语音可合成 MP4。macOS 已有部分实机证据；Windows 聊天为[源码预览](../skills/wechat-ai-chat/SKILL.md)。套件命令仍走 `wechat_ai.py` 与 `components/chat`。
 - **公众号文章：** 可见历史保存为 Markdown，新增文章可生成 Word；支持[文章归档](../skills/wechat-ai-articles/SKILL.md)与[订阅更新](../skills/wechat-ai-subscriptions/SKILL.md)。macOS 可见会话。
 - **直播回放：** 本地转写并合成一份完整账号 Word；[目录接入与验收](../skills/wechat-ai-replay-word/SKILL.md)仅 Apple Silicon 开发预览。
 - **课程合集：** 本地素材按课转写，保留讲义，每合集生成 Word；[课程 Skill](../skills/wechat-ai-courses/SKILL.md)为 Apple Silicon 开发预览。

@@ -1,6 +1,6 @@
 ---
 name: wechat-ai-services
-description: 统一识别微信聊天导出、链接转音频、直播转 Word、课程合集和公众号归档，保持各能力独立权限。
+description: 统一识别微信聊天导出、本机数据库扫描、链接转音频、直播转 Word、课程合集和公众号归档，保持各能力独立权限。
 ---
 
 # wechat-ai-services
@@ -15,6 +15,7 @@ description: 统一识别微信聊天导出、链接转音频、直播转 Word�
 
 - `wechat-ai-chat`：按精确聊天、时间和内容类型导出本机微信，保留扫描确认和严格媒体校验。
 - `wechat-ai-chat-setup`：仅在用户显式调用时初始化当前微信账号，独立确认初始化与私有快照保留。
+- 本机微信数据库扫描与导出使用已包含的 [wechat-local-export](../../wechat-local-export/portable_skill/skills/wechat-local-export/SKILL.md)。先读 [GUIDE.md](../../wechat-local-export/GUIDE.md) 与 [工具链 AGENTS.md](../../wechat-local-export/AGENTS.md)。一次性初始化只走 [wechat-local-export-setup](../../wechat-local-export/portable_skill/skills/wechat-local-export-setup/SKILL.md)，且只能由用户显式调用。安装检查脚本是 [codex_bootstrap.sh](../../wechat-local-export/scripts/codex_bootstrap.sh)。
 - `wechat-ai-media`：本人有权处理的链接或本地媒体转 MP3，保留来源绑定、断点下载与完整解码。
 - `wechat-ai-replay-word`：账号直播回放生成一份完整 Word，目录、音轨、转写、Word 分层验收。
 - `wechat-ai-articles`：从公开文章链接发现精确账号历史并在本机归档，支持日期边界与可见会话恢复。

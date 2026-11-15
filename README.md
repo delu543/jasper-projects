@@ -51,8 +51,8 @@
 <tr>
 <td width="50%" valign="top">
 <h3><a href="projects/wechat-and-archiving/wechat-ai-services/">微信 AI 服务</a></h3>
-<p>聊天导出、公众号增量与去重、回放和课程 Word 汇入一个入口，按目标选择一份实现。</p>
-<p><sub>聊天与附件 · 公众号归档 · 回放与课程</sub></p>
+<p>聊天导出、本机微信数据库扫描、公众号增量与去重、回放和课程 Word 汇入一个入口，按目标选择一份实现。</p>
+<p><sub>聊天与附件 · 本机数据库扫描 · 公众号归档 · 回放与课程</sub></p>
 <p><a href="docs/getting-started.md#wechat-ai-services"><b>开始使用 ↗</b></a> &nbsp;·&nbsp; <a href="projects/wechat-and-archiving/wechat-ai-services/">源码</a> &nbsp;·&nbsp; <a href="projects/wechat-and-archiving/wechat-ai-services/README.md">文档</a></p>
 </td>
 <td width="50%" valign="top">

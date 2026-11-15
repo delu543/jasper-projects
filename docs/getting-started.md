@@ -52,7 +52,7 @@ cd jasper-projects/projects/wechat-and-archiving/wechat-ai-services
 python3 wechat_ai.py plan articles-update
 ```
 
-`plan` 不执行服务；查看任务所需素材、对应 Skill 和选定服务的 doctor 命令。聊天、公众号、回放和课程共用统一路由，并保留独立权限和平台边界。
+`plan` 不执行服务；查看任务所需素材、对应 Skill 和选定服务的 doctor 命令。聊天、本机微信数据库扫描、公众号、回放和课程都在这个项目里，并保留独立权限和平台边界。数据库扫描从项目内的 `wechat-local-export/GUIDE.md` 读起。
 
 [功能与使用](../projects/wechat-and-archiving/wechat-ai-services/README.md) · [首次使用](../projects/wechat-and-archiving/wechat-ai-services/docs/FIRST_RUN.md)
 

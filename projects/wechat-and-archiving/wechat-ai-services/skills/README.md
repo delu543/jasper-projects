@@ -7,6 +7,8 @@ Skill 告诉 Codex 如何使用完整仓库；它本身不包含全部运行代�
 | 不确定该用哪项能力 | [总入口](wechat-ai-services/SKILL.md) | 识别目标并选择服务 |
 | 导出聊天及选定语音 | [聊天导出](wechat-ai-chat/SKILL.md) | 消息、媒体与语音 MP4 |
 | 首次建立当前聊天账号的数据访问 | [聊天初始化](wechat-ai-chat-setup/SKILL.md) | 私有账号绑定；仅显式调用 |
+| 在用户自己的 Mac 上扫描本机微信数据库 | [wechat-local-export](../wechat-local-export/portable_skill/skills/wechat-local-export/SKILL.md) | 按聊天与时间扫描、导出；先读 [GUIDE.md](../wechat-local-export/GUIDE.md) |
+| 本机扫描的一次性初始化 | [wechat-local-export-setup](../wechat-local-export/portable_skill/skills/wechat-local-export-setup/SKILL.md) | 仅用户显式调用 `$wechat-local-export-setup` |
 | 链接或本地媒体转音频 | [媒体转 MP3](wechat-ai-media/SKILL.md) | 经验证的 MP3 |
 | 整理账号直播回放 | [直播转 Word](wechat-ai-replay-word/SKILL.md) | 一份完整账号 Word 与进度面板 |
 | 本地课程音视频转录 | [课程合集](wechat-ai-courses/SKILL.md) | 每合集完整 Word |
